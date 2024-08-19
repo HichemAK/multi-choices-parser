@@ -1,10 +1,10 @@
 # Multi-choices Parser
 
 ## Overview
-Multi-choices Parser is an pure-Python efficient incremental parser for multi-choices grammars. These grammars are composed of lists of choices, where each choice is a literal string and can possibly be empty (grammar for below). This parser is optimized for scenarios where the size of the lists of choices is very large, such as representing entities preceded by a determiner.
+Multi-choices Parser is an pure-Python efficient incremental parser for multi-choices grammars. These grammars are composed of lists of choices, where each choice is a literal string and can possibly be empty (grammar form below). This parser is optimized for scenarios where the size of the lists of choices is very large, such as representing entities preceded by a determiner.
 
 
-Here is the type of grammar handled by this implementation:
+Here is the type of grammar handled by this parser:
 
 ```
 start: list1 list2 ... listn
@@ -16,8 +16,7 @@ listm: choicem_1 | choicem_2 | ... | choicem_km
 
 ## Features
 - Handles large lists of choices efficiently.
-- Incremental parsing capabilities.
-- Can represent complex grammar rules with simple lists.
+- Incremental parsing.
 
 ## Usage
 To use the `MultiChoicesParser`, follow these steps:
