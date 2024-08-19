@@ -9,9 +9,10 @@ class Leaf(dict):
 class End:
     def __repr__(self) -> str:
         return "End"
+end_symb = End()
 
 def insert_branch_into_tree(tree : dict, branch : dict) -> None:
-    if End in (type(tree), type(branch)):
+    if not (dict == type(tree) == type(tree)):
         return
     for kb,vb in branch.items():
         vt = tree.get(kb)
@@ -26,7 +27,6 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
     any_is_empty = []
     leaves_from_root = []
     len_list_choices = len(list_of_choices)
-    end_symb = End()
     for k,l in enumerate(list_of_choices):
         leaves_from_root.append(common_leaf)
         current_tree = common_leaf
@@ -65,6 +65,9 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
 
 def unfold_authorized_characters(where_am_i : list[dict], authorized : set):
     for wh in where_am_i:
+        if wh is end_symb:
+            authorized.add(wh)
+            return
         for k,v in wh.items():
             if len(k):
                 authorized.add(k)
@@ -74,9 +77,13 @@ def unfold_authorized_characters(where_am_i : list[dict], authorized : set):
 
 def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
     for wh in where_am_i:
+        if wh is None:
+            continue
+        if wh is end_symb:
+            current[end_symb] = 0
+            continue
         for k,v in wh.items():
-            # v = Leaf(v) if is_leaf else v
-            if len(k):
+            if k is end_symb or len(k):
                 vc = current.get(k)
                 if vc is None:
                     current[k] = v
@@ -90,59 +97,53 @@ def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
 
 class ChoicesConcatenationParser:
     def __init__(self, list_of_choices : list[list[str]]) -> None:
-        
         self.tree = tree_from_list_of_choices(list_of_choices)
-        
-        self.where_am_i = [(self.tree, "")]
-        self.finished = False
-        self.success = False
-        self.choices_found = [None]*len(list_of_choices)
-        self.choice_idx = 0
+        self.reset()
 
-    def next(self) -> str:
-        return ''.join(unfold_authorized_characters((d[0] for d in self.where_am_i), set()))
+    def next(self) -> tuple:
+        return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
     def step(self, ch : str) -> None:
-        assert len(ch) == 1
+        assert ch is end_symb or len(ch) == 1
         where_am_i_post = []
-        for x, buf in self.where_am_i:
+        for x in self.where_am_i:
             x = unfold_where_am_i([x], dict())
             next = x.get(ch)
-            if next is not None:
-                # if isinstance(next, Leaf):
-                #     self.choices_found[self.choice_idx] = buf[:-1]
-                #     buf = buf[-1]
-                #     self.choice_idx += 1
-                if (after_empty := next.get('')) is not None and after_empty.__class__ is End:
+            if ch is end_symb:
+                if next is not None:
                     self.success = True
-                    self.choices_found[self.choice_idx] = buf
-                    where_am_i_post.clear()
-                    break
-                buf = buf + ch
-                where_am_i_post.append((next, buf))                    
+                    self.finished = True
+                else:
+                    self.success = False
+                    self.finished = True
+                where_am_i_post.clear()
+                break
+            where_am_i_post.append(next)                    
         self.where_am_i = where_am_i_post
-        if len(self.where_am_i) == 0:
-            self.finished = True
     
     def reset(self) -> None:
         self.finished = False
         self.success = False
-        self.where_am_i = [(self.tree, "")]
-        self.choice_idx = 0
-        self.choices_found = [None]*len(self.choices_found)
+        self.where_am_i = [self.tree]
 
 
 if __name__ == "__main__":
-    # l = np.random.randint(0, 10**9, 7000000).astype(str)
+    l = np.random.randint(0, 10**9, 7000000).astype(str)
     l = [
         ['the', 'an', "a", ""],
-        ['orange', 'apple', 'banana']
+        l
     ]
+    # l = [
+    #     ['the', 'an', "a", ""],
+    #     ['orange', 'apple', 'banana']
+    # ]
     p = ChoicesConcatenationParser(l)
 
-
-    for c in 'apple':
-        print(p.next())
-        print('Adding', c)
+    to_parse = l[1][0]
+    for i, c in enumerate(tuple(to_parse) + (end_symb, )):
+        print('Step %s' % i)
+        print("Authorized characters :", sorted(p.next()))
+        print('Adding character:', c)
         p.step(c)
-        print(p.finished, p.success, p.choices_found)
+        print("State: Finished=%s, Success=%s" % (p.finished, p.success))
+        print()
