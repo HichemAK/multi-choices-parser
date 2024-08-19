@@ -1,5 +1,5 @@
 import itertools
-from choice_concat_parser import ChoicesConcatenationParser
+from choice_concat_parser import ChoicesConcatenationParser, end_symb
 
 
 def test_parse_incorrect() -> None:
@@ -10,18 +10,20 @@ def test_parse_incorrect() -> None:
 
     parser = ChoicesConcatenationParser(l)
     to_parse_incorrect = [
-        'z',
-        "the",
-        "appl",
-        "a",
-        "tzeorange"
+        ('z', True),
+        ("the", True),
+        ("appl", True),
+        ("a", True),
+        ("tzeorange", True)
     ]
 
-    for p in to_parse_incorrect:
+    for p, check in to_parse_incorrect:
         parser.reset()
-        for c in p:
+        for c in tuple(p) + (end_symb, ):
+            if check:
+                assert not parser.finished and not parser.success
             parser.step(c)
-        assert not parser.success
+        assert not parser.success and parser.finished
 
 def test_parse_correct_without_empty():
     l = [
@@ -36,13 +38,12 @@ def test_parse_correct_without_empty():
 
     for p in to_parse_correct:
         parser.reset()
-        for c in p:
+        for c in tuple(p) + (end_symb, ):
+            assert not parser.finished and not parser.success
             parser.step(c)
-            if parser.finished and parser.success:
-                break
         else:
             print(p)
-            assert False
+            assert parser.finished and parser.success
 
 def test_parse_correct_with_empty():
     l = [
@@ -57,10 +58,9 @@ def test_parse_correct_with_empty():
 
     for p in to_parse_correct:
         parser.reset()
-        for c in p:
+        for c in tuple(p) + (end_symb, ):
+            assert not parser.finished and not parser.success
             parser.step(c)
-            if parser.finished and parser.success:
-                break
         else:
             print(p)
-            assert False
+            assert parser.finished and parser.success
