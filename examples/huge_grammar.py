@@ -1,6 +1,6 @@
 import numpy as np
 
-from parser import MultiChoicesParser, end_symb
+from multi_choices_parser.parser import MultiChoicesParser, end_symb
 
 # install numpy if needed
 l = np.random.randint(0, 10**9, 1000000).astype(str)

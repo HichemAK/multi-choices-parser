@@ -1,5 +1,5 @@
 import itertools
-from parser import MultiChoicesParser, end_symb
+from multi_choices_parser.parser import MultiChoicesParser, end_symb
 
 
 def test_parse_incorrect() -> None:
