@@ -9,7 +9,7 @@ setup(
     description='An efficient incremental parser for multi-choices grammars.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/HichemAK/choices-concat-parser',
+    url='https://github.com/HichemAK/multi-choices-parser',
     install_requires=[],
     classifiers=[
         'Programming Language :: Python :: 3',
