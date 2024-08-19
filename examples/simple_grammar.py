@@ -1,10 +1,10 @@
-from choice_concat_parser import ChoicesConcatenationParser, end_symb
+from multi_choice_parser import MultiChoiceParser, end_symb
 
 l = [
     ['the', 'an', "a", ""],
     ['orange', 'apple', 'banana']
 ]
-p = ChoicesConcatenationParser(l)
+p = MultiChoiceParser(l)
 
 for i, c in enumerate(tuple("apple") + (end_symb, )):
     print('Step %s' % i)

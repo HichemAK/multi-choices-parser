@@ -1,5 +1,5 @@
 import itertools
-from choice_concat_parser import ChoicesConcatenationParser, end_symb
+from multi_choice_parser import MultiChoiceParser, end_symb
 
 
 def test_parse_incorrect() -> None:
@@ -8,7 +8,7 @@ def test_parse_incorrect() -> None:
         ['orange', 'apple', 'banana']
     ]
 
-    parser = ChoicesConcatenationParser(l)
+    parser = MultiChoiceParser(l)
     to_parse_incorrect = [
         ('z', True),
         ("the", True),
@@ -31,7 +31,7 @@ def test_parse_correct_without_empty():
         ['orange', 'apple', 'banana']
     ]
 
-    parser = ChoicesConcatenationParser(l)
+    parser = MultiChoiceParser(l)
     to_parse_correct = [
         x + y for x, y in itertools.product(l[0], l[1])
     ]
@@ -51,7 +51,7 @@ def test_parse_correct_with_empty():
         ['orange', 'apple', 'banana']
     ]
 
-    parser = ChoicesConcatenationParser(l)
+    parser = MultiChoiceParser(l)
     to_parse_correct = [
         x + y for x, y in itertools.product(l[0], l[1])
     ]

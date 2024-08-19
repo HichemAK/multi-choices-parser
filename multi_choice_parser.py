@@ -95,8 +95,8 @@ def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
 
                     
 
-class ChoicesConcatenationParser:
-    """A efficient incremental parser for choices-concatenation grammars. They are of the form:
+class MultiChoiceParser:
+    """A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
 
     start: list1 list2 ... listn
 
