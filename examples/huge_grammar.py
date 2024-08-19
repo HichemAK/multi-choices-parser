@@ -1,6 +1,6 @@
 import numpy as np
 
-from multi_choice_parser import MultiChoiceParser, end_symb
+from parser import MultiChoicesParser, end_symb
 
 
 l = np.random.randint(0, 10**9, 1000000).astype(str)
@@ -8,7 +8,7 @@ l = [
     ['the', 'an', "a", ""],
     l
 ]
-p = MultiChoiceParser(l)
+p = MultiChoicesParser(l)
 
 to_parse = l[1][0]
 print('String to parse: "%s"\n\n' % to_parse)

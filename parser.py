@@ -95,7 +95,7 @@ def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
 
                     
 
-class MultiChoiceParser:
+class MultiChoicesParser:
     """A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
 
     start: list1 list2 ... listn
