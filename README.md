@@ -14,6 +14,12 @@ list2: choice2_1 | choice2_2 | ... | choice2_k2
 listm: choicem_1 | choicem_2 | ... | choicem_km
 ```
 
+## Installation
+
+```
+pip install multi-choices-parsers
+```
+
 ## Features
 - Handles large lists of choices efficiently.
 - Incremental parsing.
