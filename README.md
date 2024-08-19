@@ -17,7 +17,7 @@ listm: choicem_1 | choicem_2 | ... | choicem_km
 ## Installation
 
 ```
-pip install multi-choices-parsers
+pip install multi-choices-parser
 ```
 
 ## Features
@@ -35,7 +35,7 @@ To use the `MultiChoicesParser`, follow these steps:
 ### Example
 ```python
 
-from parser import MultiChoicesParser, end_symb
+from multi_choices_parser.parser import MultiChoicesParser, end_symb
 
 # Define your list of choices
 l = [
