@@ -96,14 +96,59 @@ def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
                     
 
 class ChoicesConcatenationParser:
+    """A efficient incremental parser for choices-concatenation grammars. They are of the form:
+
+    start: list1 list2 ... listn
+
+    list1: choice1_1 | choice1_2 | ... | choice1_k1
+
+    list2: choice2_1 | choice2_2 | ... | choice2_k2
+
+    ...
+    
+    listm: choicem_1 | choicem_2 | ... | choicem_km
+
+    where choicex_y are all literals (strings) and can possibly be empty
+
+    Example:
+    start: det noun
+    
+    det: "the " | "an " | "a " | ""
+
+    noun: "orange" | "apple" | "banana"
+
+    This was particularly optimized when the size of the lists of choices is 
+    very large (up to order of millions), which can be helpful
+    to represent entities preceeded (or not) by a determinent. 
+    For example, in Wikipedia, there are around 7 million entities (one article per entity).
+    """
     def __init__(self, list_of_choices : list[list[str]]) -> None:
+        """Initialize the parser using a list of choices (a list of lists) which correspond 
+        to the lists introduced in the documentation of the class
+
+        Args:
+            list_of_choices (list[list[str]]): List of choices
+        """
         self.tree = tree_from_list_of_choices(list_of_choices)
         self.reset()
 
     def next(self) -> tuple:
+        """Returns all authorized tokens for the current state
+
+        Returns:
+            tuple: A tuple of characters or the End symbol 
+        """
         return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
-    def step(self, ch : str) -> None:
+    def step(self, ch : str | End) -> None:
+        """Feed the character to the parser.
+
+        Note: Feed the End symbol when the string to parse is finished.
+        After this is done, the flag self.success will tell you if the parsed string is correct or not
+
+        Args:
+            ch (str): A charachter or End symbol 
+        """
         assert ch is end_symb or len(ch) == 1
         where_am_i_post = []
         for x in self.where_am_i:
@@ -122,28 +167,8 @@ class ChoicesConcatenationParser:
         self.where_am_i = where_am_i_post
     
     def reset(self) -> None:
+        """Reset the state of the parser.
+        """
         self.finished = False
         self.success = False
         self.where_am_i = [self.tree]
-
-
-if __name__ == "__main__":
-    l = np.random.randint(0, 10**9, 7000000).astype(str)
-    l = [
-        ['the', 'an', "a", ""],
-        l
-    ]
-    # l = [
-    #     ['the', 'an', "a", ""],
-    #     ['orange', 'apple', 'banana']
-    # ]
-    p = ChoicesConcatenationParser(l)
-
-    to_parse = l[1][0]
-    for i, c in enumerate(tuple(to_parse) + (end_symb, )):
-        print('Step %s' % i)
-        print("Authorized characters :", sorted(p.next()))
-        print('Adding character:', c)
-        p.step(c)
-        print("State: Finished=%s, Success=%s" % (p.finished, p.success))
-        print()
