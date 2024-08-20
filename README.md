@@ -21,7 +21,7 @@ pip install multi-choices-parser
 ```
 
 ## Features
-- Handles large lists of choices efficiently.
+- Handles large lists of choices efficiently (up to millions of choices).
 - Incremental parsing.
 
 ## Usage
