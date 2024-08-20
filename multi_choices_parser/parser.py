@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class Leaf(dict):
     def __repr__(self) -> str:
         return "Leaf(%s)" % super().__repr__()
@@ -17,7 +19,7 @@ def insert_branch_into_tree(tree : dict, branch : dict) -> None:
         else:
             insert_branch_into_tree(vt, vb)
 
-def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
+def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, tuple]:
     root = {}
     alphabet = set()
     common_leaf = root
@@ -127,8 +129,16 @@ class MultiChoicesParser:
         Args:
             list_of_choices (list[list[str]]): List of choices
         """
-        self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices)
+        if list_of_choices is not None:
+            self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices)
+        else:
+            self.tree, self.alphabet = {}, tuple()
         self.reset()
+
+    @staticmethod
+    def init_empty() -> MultiChoicesParser:
+        empty = MultiChoicesParser(None)
+        return empty
 
     def next(self) -> tuple:
         """Returns all authorized tokens for the current state
@@ -170,3 +180,16 @@ class MultiChoicesParser:
         self.finished = False
         self.success = False
         self.where_am_i = [self.tree]
+
+
+    def copy(self, stateful=True) -> MultiChoicesParser:
+        c = MultiChoicesParser.init_empty()
+        c.tree = self.tree
+        c.alphabet = self.alphabet
+        if stateful:
+            c.finished = self.finished
+            c.success = self.success
+            c.where_am_i = self.where_am_i
+        else:
+            c.where_am_i = [c.tree]
+        return c
