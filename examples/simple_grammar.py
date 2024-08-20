@@ -5,6 +5,7 @@ l = [
     ['orange', 'apple', 'banana']
 ]
 p = MultiChoicesParser(l)
+print(sorted(p.alphabet))
 
 for i, c in enumerate(tuple("apple") + (end_symb, )):
     print('Step %s' % i)

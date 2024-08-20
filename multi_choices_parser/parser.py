@@ -19,6 +19,7 @@ def insert_branch_into_tree(tree : dict, branch : dict) -> None:
 
 def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
     root = {}
+    alphabet = set()
     common_leaf = root
     any_is_empty = []
     leaves_from_root = []
@@ -34,6 +35,7 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
             # (last_idx == -1) means ch is an empty string
             any_is_empty_k = any_is_empty_k or last_idx == -1
             for i,c in enumerate(ch):
+                alphabet.add(c)
                 d = current.get(c)
                 
                 if d is None:
@@ -57,7 +59,7 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> dict:
         for j in range(i+1, i+1+count_successive_empty):
             leaves_from_root[i][''] = leaves_from_root[j]
 
-    return root
+    return root, tuple(alphabet)
 
 def unfold_authorized_characters(where_am_i : list[dict], authorized : set):
     for wh in where_am_i:
@@ -125,7 +127,7 @@ class MultiChoicesParser:
         Args:
             list_of_choices (list[list[str]]): List of choices
         """
-        self.tree = tree_from_list_of_choices(list_of_choices)
+        self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices)
         self.reset()
 
     def next(self) -> tuple:
