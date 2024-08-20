@@ -1,5 +1,25 @@
 import itertools
+from typing import Iterator
 from parser import MultiChoicesParser, end_symb
+import pytest
+
+
+def base_grammars():
+    yield [
+        ['the', 'an', "a"],
+        ['orange', 'apple', 'banana']
+    ]
+    yield [
+        ['the', 'an', "a", ""],
+        ['orange', 'apple', 'banana']
+    ]
+
+def grammars() -> Iterator[list[list[str]]]:
+    yield from base_grammars()
+    yield [[' '],
+    ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin'],
+    ['.']]
+
 
 
 def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> None:
@@ -19,22 +39,15 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
         parser.step(c)
     assert not parser.success and parser.finished
 
-def test_alphabet() -> None:
-    l = [
-        ['the', 'an', "a", ""],
-        ['orange', 'apple', 'banana']
-    ]
-    
-    parser = MultiChoicesParser(l)
-    assert sorted(parser.alphabet) == ['a', 'b', 'e', 'g', 'h', 'l', 'n', 'o', 'p', 'r', 't']
+@pytest.mark.parametrize("grammar",
+                         grammars())
+def test_alphabet(grammar) -> None:    
+    parser = MultiChoicesParser(grammar)
+    assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
 
-def test_parse_incorrect() -> None:
-    l = [
-        ['the', 'an', "a", ""],
-        ['orange', 'apple', 'banana']
-    ]
-
-    parser = MultiChoicesParser(l)
+@pytest.mark.parametrize("grammar", grammars())
+def test_parse_incorrect(grammar) -> None:
+    parser = MultiChoicesParser(grammar)
     to_parse_incorrect = [
         ('z'),
         ("the"),
@@ -46,50 +59,22 @@ def test_parse_incorrect() -> None:
     for p in to_parse_incorrect:
         incorrect_test(p, parser)
 
-def test_parse_correct_without_empty():
-    l = [
-        ['the', 'an', "a"],
-        ['orange', 'apple', 'banana']
-    ]
+@pytest.mark.parametrize('grammar', grammars())
+def test_parse_correct(grammar):
 
-    parser = MultiChoicesParser(l)
+    parser = MultiChoicesParser(grammar)
     to_parse_correct = [
-        x + y for x, y in itertools.product(l[0], l[1])
+        ''.join(x) for x in itertools.product(*grammar)
     ]
     for p in to_parse_correct:
         correct_test(p, parser)
 
-def test_parse_correct_with_empty():
-    l = [
-        ['the', 'an', "a", ""],
-        ['orange', 'apple', 'banana']
-    ]
-
-    parser = MultiChoicesParser(l)
-    to_parse_correct = [
-        x + y for x, y in itertools.product(l[0], l[1])
-    ]
-
-    for p in to_parse_correct:
-        parser.reset()
-        for c in tuple(p) + (end_symb, ):
-            assert not parser.finished and not parser.success
-            parser.step(c)
-        else:
-            print(p)
-            assert parser.finished and parser.success
-
-
-def test_copy() -> None:
-    l = [
-        ['the', 'an', "a", ""],
-        ['orange', 'apple', 'banana']
-    ]
-
-    parser = MultiChoicesParser(l)
+@pytest.mark.parametrize('grammar', base_grammars())
+def test_copy(grammar):
+    parser = MultiChoicesParser(grammar)
 
     parser.step('a')
-    tests = l[1] + ['n'+x for x in l[1]]
+    tests = grammar[1] + ['n'+x for x in grammar[1]]
     copies = [parser.copy(stateful=True) for _ in range(len(tests))]
     for test, c in zip(tests, copies):
         correct_test(test, c, reset=False)
