@@ -166,8 +166,10 @@ class MultiChoicesParser:
             self.success = True
             self.finished = True
         elif next is None:
-                self.success = False
-                self.finished = True
+            self.success = False
+            self.finished = True
+        elif ch is not end_symb:
+            self.buf += ch
         self.where_am_i = next
     
     def reset(self) -> None:
@@ -176,6 +178,7 @@ class MultiChoicesParser:
         self.finished = False
         self.success = False
         self.where_am_i = self.tree
+        self.buf = ''
 
 
     def copy(self, stateful=True) -> MultiChoicesParser:
