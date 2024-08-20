@@ -63,34 +63,34 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, 
 
     return root, tuple(alphabet)
 
-def unfold_authorized_characters(where_am_i : list[dict], authorized : set):
-    for wh in where_am_i:
-        if wh is end_symb:
-            authorized.add(wh)
-            return
-        for k,v in wh.items():
-            if len(k):
-                authorized.add(k)
-            else:
-                unfold_authorized_characters([v], authorized)
+def unfold_authorized_characters(where_am_i : dict | None, authorized : set):
+    if where_am_i is None:
+        return authorized
+    if where_am_i is end_symb:
+        authorized.add(where_am_i)
+        return authorized
+    for k,v in where_am_i.items():
+        if len(k):
+            authorized.add(k)
+        else:
+            unfold_authorized_characters(v, authorized)
     return authorized
 
-def unfold_where_am_i(where_am_i : list[dict], current : dict) -> dict:
-    for wh in where_am_i:
-        if wh is None:
-            continue
-        if wh is end_symb:
-            current[end_symb] = 0
-            continue
-        for k,v in wh.items():
-            if k is end_symb or len(k):
-                vc = current.get(k)
-                if vc is None:
-                    current[k] = v
-                else:
-                    insert_branch_into_tree(vc, v)
+def unfold_where_am_i(where_am_i : dict | None, current : dict) -> dict:
+    if where_am_i is None:
+        return current
+    if where_am_i is end_symb:
+        current[end_symb] = 0
+        return current
+    for k,v in where_am_i.items():
+        if k is end_symb or len(k):
+            vc = current.get(k)
+            if vc is None:
+                current[k] = v
             else:
-                unfold_where_am_i([v], current)
+                insert_branch_into_tree(vc, v)
+        else:
+            unfold_where_am_i(v, current)
     return current
 
                     
@@ -122,7 +122,7 @@ class MultiChoicesParser:
     to represent entities preceeded (or not) by a determinent. 
     For example, in Wikipedia, there are around 7 million entities (one article per entity).
     """
-    def __init__(self, list_of_choices : list[list[str]]) -> None:
+    def __init__(self, list_of_choices : list[list[str]] | None) -> None:
         """Initialize the parser using a list of choices (a list of lists) which correspond 
         to the lists introduced in the documentation of the class
 
@@ -158,28 +158,23 @@ class MultiChoicesParser:
             ch (str): A charachter or End symbol 
         """
         assert ch is end_symb or len(ch) == 1
-        where_am_i_post = []
-        for x in self.where_am_i:
-            x = unfold_where_am_i([x], dict())
-            next = x.get(ch)
-            if ch is end_symb:
-                if next is not None:
-                    self.success = True
-                    self.finished = True
-                else:
-                    self.success = False
-                    self.finished = True
-                where_am_i_post.clear()
-                break
-            where_am_i_post.append(next)                    
-        self.where_am_i = where_am_i_post
+        where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict())
+        next = where_am_i_unfolded.get(ch)
+        if ch is end_symb:
+            if next is not None:
+                self.success = True
+                self.finished = True
+            else:
+                self.success = False
+                self.finished = True
+        self.where_am_i = next
     
     def reset(self) -> None:
         """Reset the state of the parser.
         """
         self.finished = False
         self.success = False
-        self.where_am_i = [self.tree]
+        self.where_am_i = self.tree
 
 
     def copy(self, stateful=True) -> MultiChoicesParser:
@@ -191,5 +186,5 @@ class MultiChoicesParser:
             c.success = self.success
             c.where_am_i = self.where_am_i
         else:
-            c.where_am_i = [c.tree]
+            c.where_am_i = c.tree
         return c
