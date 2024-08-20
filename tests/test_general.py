@@ -20,6 +20,24 @@ def grammars() -> Iterator[list[list[str]]]:
     ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin'],
     ['.']]
 
+def grammar_expected_next():
+    to_parse = 'theorange'
+    nexts = [
+        'oabt',
+        'h',
+        'e',
+        'oab',
+        'r',
+        'a',
+        'n',
+        'g',
+        'e',
+        (end_symb, )
+    ]
+    return [
+        (list(base_grammars())[1], to_parse, [tuple(x) for x in nexts if not isinstance(x, tuple)])
+        ]
+
 
 
 def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> None:
@@ -35,9 +53,18 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> Non
 def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     parser.reset()
     for c in tuple(to_parse) + (end_symb, ):
-        assert not parser.finished and not parser.success
+        assert not parser.success
         parser.step(c)
     assert not parser.success and parser.finished
+
+@pytest.mark.parametrize(["grammar", "to_parse", "nexts"],
+                         grammar_expected_next())
+def test_next(grammar, to_parse, nexts) -> None:
+    parser = MultiChoicesParser(grammar)
+    for c, n in zip(tuple(to_parse) + (end_symb,), nexts):
+        assert sorted(parser.next()) == sorted(n)
+        parser.step(c)
+    
 
 @pytest.mark.parametrize("grammar",
                          grammars())

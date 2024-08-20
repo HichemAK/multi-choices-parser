@@ -157,14 +157,15 @@ class MultiChoicesParser:
         Args:
             ch (str): A charachter or End symbol 
         """
+        if self.finished:
+            return
         assert ch is end_symb or len(ch) == 1
         where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict())
         next = where_am_i_unfolded.get(ch)
-        if ch is end_symb:
-            if next is not None:
-                self.success = True
-                self.finished = True
-            else:
+        if next == 0 and ch is end_symb:
+            self.success = True
+            self.finished = True
+        elif next is None:
                 self.success = False
                 self.finished = True
         self.where_am_i = next
