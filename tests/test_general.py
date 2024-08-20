@@ -2,6 +2,15 @@ import itertools
 from parser import MultiChoicesParser, end_symb
 
 
+def test_alphabet() -> None:
+    l = [
+        ['the', 'an', "a", ""],
+        ['orange', 'apple', 'banana']
+    ]
+
+    parser = MultiChoicesParser(l)
+    assert sorted(parser.alphabet) == ['a', 'b', 'e', 'g', 'h', 'l', 'n', 'o', 'p', 'r', 't']
+
 def test_parse_incorrect() -> None:
     l = [
         ['the', 'an', "a", ""],
