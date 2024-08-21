@@ -48,6 +48,8 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, 
                 if i == last_idx:
                     current[''] = common_leaf
         any_is_empty.append(any_is_empty_k)
+    else:
+        leaves_from_root.append(common_leaf)
 
 
     # Handle empty choices
@@ -59,7 +61,11 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, 
             count_successive_empty += 1
 
         for j in range(i+1, i+1+count_successive_empty):
-            leaves_from_root[i][''] = leaves_from_root[j]
+            d = leaves_from_root[i].get('')
+            if d is None:
+                leaves_from_root[i][''] = leaves_from_root[j]
+            else:
+                insert_branch_into_tree(d, leaves_from_root[j])
 
     return root, tuple(alphabet)
 
