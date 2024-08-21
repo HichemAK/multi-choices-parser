@@ -13,6 +13,10 @@ def base_grammars():
         ['the', 'an', "a", ""],
         ['orange', 'apple', 'banana']
     ]
+    yield [
+        ['the', 'an', "a", ""],
+        ['orange', 'apple', 'banana', '']
+    ]
 
 def grammars() -> Iterator[list[list[str]]]:
     yield from base_grammars()
@@ -77,9 +81,9 @@ def test_parse_incorrect(grammar) -> None:
     parser = MultiChoicesParser(grammar)
     to_parse_incorrect = [
         ('z'),
-        ("the"),
+        ("them"),
         ("appl"),
-        ("a"),
+        ("ana"),
         ("tzeorange")
     ]
 
