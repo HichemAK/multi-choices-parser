@@ -3,7 +3,6 @@ from typing import Iterator
 from parser import MultiChoicesParser, end_symb
 import pytest
 
-
 def base_grammars():
     yield [
         ['the', 'an', "a"],
@@ -22,6 +21,10 @@ def grammars() -> Iterator[list[list[str]]]:
     yield from base_grammars()
     yield [[' '],
     ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin'],
+    ['.']]
+
+    yield [[' '],
+    ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin', 'U.S. Open Cup', 'Manchester United F.C.', "Box Office U.S."],
     ['.']]
 
 def grammar_expected_next():
