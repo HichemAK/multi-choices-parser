@@ -89,7 +89,7 @@ def unfold_where_am_i(where_am_i : dict | None, current : dict) -> dict:
         current[end_symb] = 0
         return current
     for k,v in where_am_i.items():
-        if k is end_symb or len(k):
+        if k is end_symb or k != '':
             vc = current.get(k)
             if vc is None:
                 current[k] = v
@@ -127,8 +127,10 @@ class MultiChoicesParser:
     very large (up to order of millions), which can be helpful
     to represent entities preceeded (or not) by a determinent. 
     For example, in Wikipedia, there are around 7 million entities (one article per entity).
+
+    NOTE: It is possible to use other types of sequences that strings as choices, such as a list of integers.
     """
-    def __init__(self, list_of_choices : list[list[str]] | None) -> None:
+    def __init__(self, list_of_choices : list[list[list]] | None) -> None:
         """Initialize the parser using a list of choices (a list of lists) which correspond 
         to the lists introduced in the documentation of the class
 
@@ -154,7 +156,7 @@ class MultiChoicesParser:
         """
         return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
-    def step(self, ch : str | End) -> None:
+    def step(self, ch : str | int | End) -> None:
         """Feed the character to the parser.
 
         Note: Feed the End symbol when the string to parse is finished.
@@ -165,7 +167,7 @@ class MultiChoicesParser:
         """
         if self.finished:
             return
-        assert ch is end_symb or len(ch) == 1
+        # assert ch is end_symb or len(ch) == 1
         where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict())
         next = where_am_i_unfolded.get(ch)
         if next == 0 and ch is end_symb:
@@ -175,7 +177,7 @@ class MultiChoicesParser:
             self.success = False
             self.finished = True
         elif ch is not end_symb:
-            self.buf += ch
+            self.buf.append(ch)
         self.where_am_i = next
     
     def reset(self) -> None:
@@ -184,7 +186,7 @@ class MultiChoicesParser:
         self.finished = False
         self.success = False
         self.where_am_i = self.tree
-        self.buf = ''
+        self.buf = []
 
 
     def copy(self, stateful=True) -> MultiChoicesParser:
