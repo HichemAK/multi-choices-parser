@@ -17,6 +17,25 @@ def base_grammars():
         ['orange', 'apple', 'banana', '']
     ]
 
+def integer_grammars():
+    for grammar in grammars():
+        alphabet = set()
+        for l in grammar:
+            for c in l:
+                for a in c:
+                    alphabet.add(a)
+        alphabet = {k:i for i,k in enumerate(alphabet)}
+        int_grammar = []
+        for l in grammar:
+            nl = []
+            for c in l:
+                nc = []
+                for a in c:
+                    nc.append(alphabet[a])
+                nl.append(nc)
+            int_grammar.append(nl)
+        yield int_grammar
+
 def grammars() -> Iterator[list[list[str]]]:
     yield from base_grammars()
     yield [[' '],
@@ -26,6 +45,10 @@ def grammars() -> Iterator[list[list[str]]]:
     yield [[' '],
     ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin', 'U.S. Open Cup', 'Manchester United F.C.', "Box Office U.S."],
     ['.']]
+
+def all_grammars() -> Iterator[list[list[str]]]:
+    yield from grammars()
+    yield from integer_grammars()
 
 def grammar_expected_next():
     to_parse = 'theorange'
@@ -74,12 +97,12 @@ def test_next(grammar, to_parse, nexts) -> None:
     
 
 @pytest.mark.parametrize("grammar",
-                         grammars())
+                         all_grammars())
 def test_alphabet(grammar) -> None:    
     parser = MultiChoicesParser(grammar)
     assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
 
-@pytest.mark.parametrize("grammar", grammars())
+@pytest.mark.parametrize("grammar", all_grammars())
 def test_parse_incorrect(grammar) -> None:
     parser = MultiChoicesParser(grammar)
     to_parse_incorrect = [
@@ -93,12 +116,12 @@ def test_parse_incorrect(grammar) -> None:
     for p in to_parse_incorrect:
         incorrect_test(p, parser)
 
-@pytest.mark.parametrize('grammar', grammars())
+@pytest.mark.parametrize('grammar', all_grammars())
 def test_parse_correct(grammar):
 
     parser = MultiChoicesParser(grammar)
     to_parse_correct = [
-        ''.join(x) for x in itertools.product(*grammar)
+        itertools.chain(*x) for x in itertools.product(*grammar)
     ]
     for p in to_parse_correct:
         correct_test(p, parser)
