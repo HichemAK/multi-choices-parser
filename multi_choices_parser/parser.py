@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import deque
 
 class Leaf(dict):
     def __repr__(self) -> str:
@@ -10,7 +11,7 @@ class End:
 end_symb = End()
 
 def insert_branch_into_tree(tree : dict, branch : dict) -> None:
-    if not (dict == type(tree) == type(tree)):
+    if tree is branch or not (dict == type(tree) == type(branch)):
         return
     for kb,vb in branch.items():
         vt = tree.get(kb)
@@ -19,9 +20,9 @@ def insert_branch_into_tree(tree : dict, branch : dict) -> None:
         else:
             insert_branch_into_tree(vt, vb)
 
-def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, tuple]:
+def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], alphabet : tuple[str | tuple[int]] = None) -> tuple[dict, tuple]:
     root = {}
-    alphabet = set()
+    alphaset = set()
     common_leaf = root
     any_is_empty = []
     leaves_from_root = []
@@ -37,7 +38,7 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, 
             # (last_idx == -1) means ch is an empty string
             any_is_empty_k = any_is_empty_k or last_idx == -1
             for i,c in enumerate(ch):
-                alphabet.add(c)
+                alphaset.add(c)
                 d = current.get(c)
                 
                 if d is None:
@@ -66,8 +67,64 @@ def tree_from_list_of_choices(list_of_choices : list[list[str]]) -> tuple[dict, 
                 leaves_from_root[i][''] = leaves_from_root[j]
             else:
                 insert_branch_into_tree(d, leaves_from_root[j])
+    
+    if alphabet is not None:
+        adapt_to_alphabet(root, alphabet)
 
-    return root, tuple(alphabet)
+    return root, tuple(alphaset)
+
+
+def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
+    # Handle characters in alphabet (which have a length > 1)
+    alphaset = set(tuple(x) for x in alphabet)
+    maxlen = max(len(x) for x in alphaset)
+    
+    nodes_left = [(root, '')]
+    chain = []
+    node_pointers : list[dict] = [root]
+    chain_length_by_node = [0]
+
+    links_to_delete = []
+
+    while len(nodes_left):
+        current_node, last_char = nodes_left.pop()
+        chain_len = chain_length_by_node.pop()
+        chain = chain[:chain_len]
+        node_pointers = node_pointers[:chain_len]
+
+        if last_char != '':
+            chain.append(last_char)
+            node_pointers.append(current_node)
+
+            for i in range(2, min(chain_len, maxlen)+1):
+                if (multilength_ch := tuple(chain[-i:])) in alphaset:
+                    past_node = node_pointers[-i-1]
+                    d = past_node.get(multilength_ch)
+                    if d is None:
+                        past_node[multilength_ch] = v
+                    else:
+                        insert_branch_into_tree(d, v)
+
+            # TODO: Bug when parsing 'anapple', arriving at the first 'p', the rest of the tree is cut using the next if statement
+            # because 'p' is not in the alphabet
+            # I should register every delete to do and do it afterwards at the end of the function (DONE!)
+            if len(ch := chain[-1]) == 1 and (ch,) not in alphaset:
+                links_to_delete.append((node_pointers[-2], ch))
+
+
+        # Stop DFS when reaching leaf
+        if not isinstance(current_node, dict):
+            continue
+
+
+        for k, v in current_node.items():            
+            chain_length_by_node.append(chain_len + 1)
+            nodes_left.append((v,k))
+
+    # Delete links in tree because alphabet has shrinked
+    for node, ch in links_to_delete:
+        node.pop(ch, None)
+    
 
 def unfold_authorized_characters(where_am_i : dict | None, authorized : set):
     if where_am_i is None:
@@ -130,15 +187,12 @@ class MultiChoicesParser:
 
     NOTE: It is possible to use other types of sequences that strings as choices, such as a list of integers.
     """
-    def __init__(self, list_of_choices : list[list[list]] | None) -> None:
+    def __init__(self, list_of_choices : list[list[str | tuple[int]]] | None, alphabet : list = None) -> None:
         """Initialize the parser using a list of choices (a list of lists) which correspond 
         to the lists introduced in the documentation of the class
-
-        Args:
-            list_of_choices (list[list[str]]): List of choices
         """
         if list_of_choices is not None:
-            self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices)
+            self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices, alphabet)
         else:
             self.tree, self.alphabet = {}, tuple()
         self.reset()
@@ -154,6 +208,8 @@ class MultiChoicesParser:
         Returns:
             tuple: A tuple of characters or the End symbol 
         """
+        if self.finished:
+            return tuple()
         return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
     def step(self, ch : str | int | End) -> None:
