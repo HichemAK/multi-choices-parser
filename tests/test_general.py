@@ -1,4 +1,5 @@
 import itertools
+import re
 from typing import Iterator
 from parser import MultiChoicesParser, end_symb
 import pytest
@@ -31,7 +32,7 @@ def integer_grammars():
             for c in l:
                 nc = []
                 for a in c:
-                    nc.append(alphabet[a])
+                    nc.append((alphabet[a],))
                 nl.append(nc)
             int_grammar.append(nl)
         yield int_grammar, None
@@ -71,20 +72,32 @@ def alphabet_contrained_grammars():
     yield [
         ['the', 'an', "a"],
         ['orange', 'apple', 'banana']
-    ], 'theanorgplb'
+    ], tuple((x,) for x in 'theanorgplb')
     yield [
         ['the', 'an', "a"],
         ['orange', 'apple', 'banana']
-    ], tuple('theanorglbp') + ('pp',)   
+    ], tuple((x,) for x in 'theanorglbp') + (tuple('pp'),)   
     yield [
         ['the', 'an', "a"],
         ['orange', 'apple', 'banana']
-    ], tuple('theanorglb') + ('pp',)   
+    ], tuple((x,) for x in 'theanorglb') + (tuple('pp'),)  
+
+def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> list:
+    res = []
+    alphaset = set(alphabet)
+    buf = []
+    for ch in text:
+        buf.append(ch)
+        if (letter := tuple(itertools.chain(*buf))) in alphaset:
+            res.append(letter)
+            buf.clear()
+    return res
 
 def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> None:
     if reset:
         parser.reset()
-    to_parse = tuple(to_parse) + (end_symb, )
+    to_parse = split_according_to_alphabet(to_parse, parser.alphabet) + [end_symb]
+    # to_parse = tuple(to_parse) + (end_symb, )
     for c in to_parse:
         assert not parser.finished and not parser.success
         parser.step(c)
@@ -104,8 +117,8 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 def test_next(grammar_alphabet, to_parse, nexts) -> None:
     grammar, alphabet = grammar_alphabet
     parser = MultiChoicesParser(grammar, alphabet)
-    for c, n in zip(tuple(to_parse) + (end_symb,), nexts):
-        assert sorted(parser.next()) == sorted(n)
+    for c, n in zip(split_according_to_alphabet(to_parse, parser.alphabet) + [end_symb], nexts):
+        assert sorted(parser.next()) == sorted((x,) for x in n)
         parser.step(c)
     
 
@@ -115,7 +128,7 @@ def test_alphabet(grammar_alphabet) -> None:
     grammar, alphabet = grammar_alphabet
     parser = MultiChoicesParser(grammar, alphabet)
     if alphabet is None:
-        assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
+        assert set(parser.alphabet) == set(tuple(c) for y in grammar for x in y for c in x)
 
 @pytest.mark.parametrize("grammar_alphabet", all_grammars())
 def test_parse_incorrect(grammar_alphabet) -> None:
@@ -148,7 +161,7 @@ def test_copy(grammar_alphabet):
     grammar, alphabet = grammar_alphabet
     parser = MultiChoicesParser(grammar, alphabet)
 
-    parser.step('a')
+    parser.step(('a',))
     tests = grammar[1] + ['n'+x for x in grammar[1]]
     copies = [parser.copy(stateful=True) for _ in range(len(tests))]
     for test, c in zip(tests, copies):

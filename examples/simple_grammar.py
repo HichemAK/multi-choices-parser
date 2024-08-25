@@ -1,8 +1,8 @@
 from multi_choices_parser import MultiChoicesParser, end_symb
 
 l = [
-    ['the', 'an', "a", ""],
-    ['orange', 'apple', 'banana']
+    [tuple(x,) for x in ['the', 'an', "a", ""]],
+    [tuple(x,) for x in ['orange', 'apple', 'banana']]
 ]
 p = MultiChoicesParser(l)
 print(sorted(p.alphabet))

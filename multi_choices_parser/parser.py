@@ -1,5 +1,7 @@
 from __future__ import annotations
 from collections import deque
+import itertools
+from typing import Any
 
 class Leaf(dict):
     def __repr__(self) -> str:
@@ -38,6 +40,7 @@ def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], alp
             # (last_idx == -1) means ch is an empty string
             any_is_empty_k = any_is_empty_k or last_idx == -1
             for i,c in enumerate(ch):
+                c = tuple(c)
                 alphaset.add(c)
                 d = current.get(c)
                 
@@ -71,12 +74,12 @@ def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], alp
     if alphabet is not None:
         adapt_to_alphabet(root, alphabet)
 
-    return root, tuple(alphaset)
+    return root, tuple(alphaset) if alphabet is None else alphabet
 
 
 def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
     # Handle characters in alphabet (which have a length > 1)
-    alphaset = set(tuple(x) for x in alphabet)
+    alphaset = set(alphabet)
     maxlen = max(len(x) for x in alphaset)
     
     nodes_left = [(root, '')]
@@ -84,7 +87,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
     node_pointers : list[dict] = [root]
     chain_length_by_node = [0]
 
-    links_to_delete = []
+    links_to_delete : dict[tuple, tuple[dict, Any]] = {}
 
     while len(nodes_left):
         current_node, last_char = nodes_left.pop()
@@ -97,9 +100,10 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             node_pointers.append(current_node)
 
             for i in range(2, min(chain_len, maxlen)+1):
-                if (multilength_ch := tuple(chain[-i:])) in alphaset:
+                if (multilength_ch := tuple(itertools.chain(*chain[-i:]))) in alphaset:
                     past_node = node_pointers[-i-1]
                     d = past_node.get(multilength_ch)
+                    print('Inserting link of multi-character "%s"' % str(multilength_ch))
                     if d is None:
                         past_node[multilength_ch] = v
                     else:
@@ -108,8 +112,11 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             # TODO: Bug when parsing 'anapple', arriving at the first 'p', the rest of the tree is cut using the next if statement
             # because 'p' is not in the alphabet
             # I should register every delete to do and do it afterwards at the end of the function (DONE!)
-            if len(ch := chain[-1]) == 1 and (ch,) not in alphaset:
-                links_to_delete.append((node_pointers[-2], ch))
+            if len(ch := chain[-1]) == 1 and ch not in alphaset:
+                print("Removing links of character '%s'" % ch)
+                link = (id(node_pointers[-2]), ch)
+                if link not in links_to_delete:
+                    links_to_delete[link] = (node_pointers[-2], ch)
 
 
         # Stop DFS when reaching leaf
@@ -122,7 +129,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             nodes_left.append((v,k))
 
     # Delete links in tree because alphabet has shrinked
-    for node, ch in links_to_delete:
+    for node, ch in links_to_delete.values():
         node.pop(ch, None)
     
 
@@ -212,7 +219,7 @@ class MultiChoicesParser:
             return tuple()
         return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
-    def step(self, ch : str | int | End) -> None:
+    def step(self, ch : tuple[str|int] | End) -> None:
         """Feed the character to the parser.
 
         Note: Feed the End symbol when the string to parse is finished.
