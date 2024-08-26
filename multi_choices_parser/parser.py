@@ -6,10 +6,24 @@ from typing import Any
 class Leaf(dict):
     def __repr__(self) -> str:
         return "Leaf(%s)" % super().__repr__()
-    
+
 class End:
     def __repr__(self) -> str:
         return "End"
+    
+    def __lt__(self, other) -> bool:
+        return False
+    
+    def __gt__(self, other) -> bool:
+        return True
+    
+    def __eq__(self, value: object) -> bool:
+        return False
+    
+    def __hash__(self) -> int:
+        return id(self)
+
+# Do not instantiate more than one End
 end_symb = End()
 
 def insert_branch_into_tree(tree : dict, branch : dict) -> None:
@@ -40,7 +54,11 @@ def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], alp
             # (last_idx == -1) means ch is an empty string
             any_is_empty_k = any_is_empty_k or last_idx == -1
             for i,c in enumerate(ch):
-                c = tuple(c)
+                # Make c hashable
+                if isinstance(c, list):
+                    c = tuple(c)
+                elif not isinstance(c, (str, tuple)):
+                    c = (c,)
                 alphaset.add(c)
                 d = current.get(c)
                 
@@ -100,10 +118,14 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             node_pointers.append(current_node)
 
             for i in range(2, min(chain_len, maxlen)+1):
-                if (multilength_ch := tuple(itertools.chain(*chain[-i:]))) in alphaset:
+                if all(isinstance(x, str) for x in chain[-i:]):
+                    multilength_ch = ''.join(itertools.chain(*chain[-i:]))
+                else:
+                    multilength_ch = tuple(itertools.chain(*chain[-i:]))
+                if multilength_ch in alphaset:
                     past_node = node_pointers[-i-1]
                     d = past_node.get(multilength_ch)
-                    print('Inserting link of multi-character "%s"' % str(multilength_ch))
+                    # print('Inserting link of multi-character "%s"' % str(multilength_ch))
                     if d is None:
                         past_node[multilength_ch] = v
                     else:
@@ -113,7 +135,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             # because 'p' is not in the alphabet
             # I should register every delete to do and do it afterwards at the end of the function (DONE!)
             if len(ch := chain[-1]) == 1 and ch not in alphaset:
-                print("Removing links of character '%s'" % ch)
+                # print("Removing links of character '%s'" % ch)
                 link = (id(node_pointers[-2]), ch)
                 if link not in links_to_delete:
                     links_to_delete[link] = (node_pointers[-2], ch)
@@ -219,7 +241,7 @@ class MultiChoicesParser:
             return tuple()
         return tuple(unfold_authorized_characters(self.where_am_i, set()))
     
-    def step(self, ch : tuple[str|int] | End) -> None:
+    def step(self, ch : str | int | tuple[int] | End) -> None:
         """Feed the character to the parser.
 
         Note: Feed the End symbol when the string to parse is finished.
@@ -228,9 +250,14 @@ class MultiChoicesParser:
         Args:
             ch (str): A charachter or End symbol 
         """
+        assert isinstance(ch, (str,tuple,int,End))
         if self.finished:
             return
-        # assert ch is end_symb or len(ch) == 1
+        
+        # Format int to tuple
+        if isinstance(ch,int):
+            ch = (ch,)
+        
         where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict())
         next = where_am_i_unfolded.get(ch)
         if next == 0 and ch is end_symb:
