@@ -127,9 +127,9 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
                     d = past_node.get(multilength_ch)
                     # print('Inserting link of multi-character "%s"' % str(multilength_ch))
                     if d is None:
-                        past_node[multilength_ch] = v
+                        past_node[multilength_ch] = current_node
                     else:
-                        insert_branch_into_tree(d, v)
+                        insert_branch_into_tree(d, current_node)
 
             # TODO: Bug when parsing 'anapple', arriving at the first 'p', the rest of the tree is cut using the next if statement
             # because 'p' is not in the alphabet
