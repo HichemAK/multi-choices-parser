@@ -111,7 +111,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
         current_node, last_char = nodes_left.pop()
         chain_len = chain_length_by_node.pop()
         chain = chain[:chain_len]
-        node_pointers = node_pointers[:chain_len]
+        node_pointers = node_pointers[:chain_len+1]
 
         if last_char != '':
             chain.append(last_char)
@@ -145,9 +145,9 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
         if not isinstance(current_node, dict):
             continue
 
-
+        plus_one = 1 if last_char != '' else 0
         for k, v in current_node.items():            
-            chain_length_by_node.append(chain_len + 1)
+            chain_length_by_node.append(chain_len + plus_one)
             nodes_left.append((v,k))
 
     # Delete links in tree because alphabet has shrinked

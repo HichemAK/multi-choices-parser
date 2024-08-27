@@ -1,4 +1,6 @@
+import os.path as osp
 import itertools
+import json
 import re
 from typing import Iterator
 from parser import MultiChoicesParser, end_symb
@@ -47,6 +49,7 @@ def grammars() -> Iterator[list[list[str]]]:
     ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin', 'U.S. Open Cup', 'Manchester United F.C.', "Box Office U.S."],
     ['.']], None
 
+
 def all_grammars() -> Iterator[list[list[str]]]:
     yield from grammars()
     yield from integer_grammars()
@@ -82,7 +85,25 @@ def alphabet_contrained_grammars():
         ['orange', 'apple', 'banana']
     ], tuple('theanorglb') + ('pp',)
 
-def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> list:
+
+    # Real world grammars
+    root = osp.dirname(__file__)
+    entities = json.load(open(osp.join(root, 'choices.json')))
+    alphabet = json.load(open(osp.join(root, 'alphabet.json')))
+    
+    yield [[' '],
+    entities,
+    ['.']], None
+
+    yield [[' '],
+    entities,
+    ['.']], alphabet
+
+    # yield [[' '],
+    # entities,
+    # ['.']], ["Ġ" + x for x in alphabet]
+
+def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> tuple[list, bool]:
     res = []
     alphaset = set(alphabet)
     buf = []
@@ -98,13 +119,16 @@ def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[s
             res.append(letter)
             buf.clear()
             all_str = True
-    return res
+    return res, len(buf) == 0
 
 def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> None:
     if reset:
         parser.reset()
-    to_parse = split_according_to_alphabet(to_parse, parser.alphabet) + [end_symb]
-    # to_parse = tuple(to_parse) + (end_symb, )
+    to_parse2 = list(to_parse)
+    to_parse, success = split_according_to_alphabet(to_parse2, parser.alphabet)
+    to_parse += [end_symb]
+    if not success:
+        return
     for c in to_parse:
         assert not parser.finished and not parser.success
         parser.step(c)
@@ -124,7 +148,7 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 def test_next(grammar_alphabet, to_parse, nexts) -> None:
     grammar, alphabet = grammar_alphabet
     parser = MultiChoicesParser(grammar, alphabet)
-    for c, n in zip(split_according_to_alphabet(to_parse, parser.alphabet) + [end_symb], nexts):
+    for c, n in zip(split_according_to_alphabet(to_parse, parser.alphabet)[0] + [end_symb], nexts):
         assert sorted(parser.next()) == sorted(n)
         parser.step(c)
     
