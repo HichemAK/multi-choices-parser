@@ -70,6 +70,19 @@ def grammar_expected_next():
         (end_symb, )
     ]
     yield list(appleorange_grammars())[1], to_parse, [tuple(x) for x in nexts if not isinstance(x, tuple)]
+    grammar = [
+        ['the', 'an', "a"],
+        ['orange', 'apple', 'banana']
+    ]
+    alphabet = tuple('theanorgpbl') + ('anapp', 'le')
+    to_parse = ('anapp',) + tuple('le')
+    nexts = [
+        tuple('ta') + ('anapp',),
+        ('le','l'),
+        ('e',),
+        (end_symb, )
+    ]
+    yield (grammar, alphabet), to_parse, nexts
 
 def alphabet_contrained_grammars():
     yield [
@@ -86,7 +99,8 @@ def alphabet_contrained_grammars():
     ], tuple('theanorglb') + ('pp',)
 
 
-    # Real world grammars
+    # Real world grammars (the alphabet is from the GPT2 tokenizer 
+    # and the entities are the first entities from Wikidata)
     root = osp.dirname(__file__)
     entities = json.load(open(osp.join(root, 'choices.json')))
     alphabet = json.load(open(osp.join(root, 'alphabet.json')))

@@ -117,7 +117,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             chain.append(last_char)
             node_pointers.append(current_node)
 
-            for i in range(2, min(chain_len, maxlen)+1):
+            for i in range(2, min(chain_len+1, maxlen)+1):
                 if all(isinstance(x, str) for x in chain[-i:]):
                     multilength_ch = ''.join(itertools.chain(*chain[-i:]))
                 else:
