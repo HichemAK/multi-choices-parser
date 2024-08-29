@@ -140,20 +140,29 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
     random.seed(42112)
     if reset:
         parser.reset()
+    initial_parser = parser.copy()
     to_parse2 = list(to_parse)
     to_parse, success = split_according_to_alphabet(to_parse2, parser.alphabet)
     to_parse += [end_symb]
     if not success:
         return
     for c in to_parse:
+        # Verify that parser is not finished while the parsing did not end
         assert not parser.finished and not parser.success
         parser.step(c)
+
+        # Verify that initial parser and post-step parsers are different
+        assert initial_parser != parser and hash(initial_parser) != hash(parser)
     else:
         print(to_parse)
+        # Verify that the parser accepted the string to parse
         assert parser.finished and parser.success
     if test_accept:
+        # Test .accepts method
         parser.reset()
         assert parser.accepts(to_parse)
+
+        # Test a random substring of the string to parse
         assert parser.accepts(to_parse[:random.randint(0, len(to_parse)-1)])
 
 def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
@@ -218,5 +227,6 @@ def test_copy(grammar_alphabet):
     parser.step('a')
     tests = grammar[1] + ['n'+x for x in grammar[1]]
     copies = [parser.copy(stateful=True) for _ in range(len(tests))]
+    assert all(x == parser and hash(x) == hash(parser) for x in copies)
     for test, c in zip(tests, copies):
         correct_test(test, c, reset=False, test_accept=False)

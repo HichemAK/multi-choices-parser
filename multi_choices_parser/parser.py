@@ -302,3 +302,13 @@ class MultiChoicesParser:
             if current is end_symb:
                 current = {end_symb : 0 if s is end_symb else None}
         return True
+
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, MultiChoicesParser):
+            return False
+        return self.alphabet is value.alphabet and self.tree is value.tree \
+            and self.where_am_i is value.where_am_i and self.finished == value.finished and self.success == value.success
+    
+    def __hash__(self) -> int:
+        return sum(hash(x) for x in (id(self.alphabet), id(self.where_am_i), 
+                                     id(self.tree), self.finished, self.success))
