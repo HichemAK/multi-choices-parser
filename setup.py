@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='multi-choices-parser',
-    version='0.9.55',
+    version='0.9.56',
     author='Hichem Ammar Khodja',
     author_email='hichem5696@gmail.com',
     packages=find_packages(),

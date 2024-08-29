@@ -286,7 +286,7 @@ class MultiChoicesParser:
             c.finished = self.finished
             c.success = self.success
             c.where_am_i = self.where_am_i
-            c.buf = self.buf
+            c.buf = list(self.buf)
         else:
             c.where_am_i = c.tree
         return c
