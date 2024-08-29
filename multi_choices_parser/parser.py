@@ -118,6 +118,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
             node_pointers.append(current_node)
 
             for i in range(2, min(chain_len+1, maxlen)+1):
+                # TODO: This for loop is optimizable
                 if all(isinstance(x, str) for x in chain[-i:]):
                     multilength_ch = ''.join(itertools.chain(*chain[-i:]))
                 else:
@@ -131,9 +132,6 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
                     else:
                         insert_branch_into_tree(d, current_node)
 
-            # TODO: Bug when parsing 'anapple', arriving at the first 'p', the rest of the tree is cut using the next if statement
-            # because 'p' is not in the alphabet
-            # I should register every delete to do and do it afterwards at the end of the function (DONE!)
             if len(ch := chain[-1]) == 1 and ch not in alphaset:
                 # print("Removing links of character '%s'" % ch)
                 link = (id(node_pointers[-2]), ch)
@@ -280,6 +278,7 @@ class MultiChoicesParser:
 
 
     def copy(self, stateful=True) -> MultiChoicesParser:
+        """Return a copy of this parser (stateful or not)"""
         c = MultiChoicesParser.init_empty()
         c.tree = self.tree
         c.alphabet = self.alphabet
@@ -291,3 +290,15 @@ class MultiChoicesParser:
         else:
             c.where_am_i = c.tree
         return c
+    
+    def accepts(self, string : str) -> bool:
+        """Check whether the input string is correct according to this parser"""
+        current = self.where_am_i
+        for s in string:
+            where_am_i_unfolded = unfold_where_am_i(current, dict())
+            current = where_am_i_unfolded.get(s, None)
+            if current is None:
+                return False
+            if current is end_symb:
+                current = {end_symb : 0 if s is end_symb else None}
+        return True
