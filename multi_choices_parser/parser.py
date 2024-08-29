@@ -302,7 +302,9 @@ class MultiChoicesParser:
             if current is end_symb:
                 current = {end_symb : 0 if s is end_symb else None}
         return True
-
+    
+    # [parser1 == parser2 or hash(parser1) == hash(parser2)] ===> parser1 and parser2 will behave exactly the same 
+    # (but the reverse is not necessarily True)
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, MultiChoicesParser):
             return False
