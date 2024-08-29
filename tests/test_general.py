@@ -5,6 +5,7 @@ import re
 from typing import Iterator
 from parser import MultiChoicesParser, end_symb
 import pytest
+import random
 
 def appleorange_grammars():
     yield [
@@ -135,7 +136,8 @@ def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[s
             all_str = True
     return res, len(buf) == 0
 
-def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> None:
+def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_accept=True) -> None:
+    random.seed(42112)
     if reset:
         parser.reset()
     to_parse2 = list(to_parse)
@@ -149,13 +151,20 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True) -> Non
     else:
         print(to_parse)
         assert parser.finished and parser.success
+    if test_accept:
+        parser.reset()
+        assert parser.accepts(to_parse)
+        assert parser.accepts(to_parse[:random.randint(0, len(to_parse)-1)])
 
 def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     parser.reset()
-    for c in tuple(to_parse) + (end_symb, ):
+    to_parse = tuple(to_parse) + (end_symb, )
+    for c in to_parse:
         assert not parser.success
         parser.step(c)
     assert not parser.success and parser.finished
+    parser.reset()
+    assert not parser.accepts(to_parse)
 
 @pytest.mark.parametrize(["grammar_alphabet", "to_parse", "nexts"],
                          grammar_expected_next())
@@ -210,4 +219,4 @@ def test_copy(grammar_alphabet):
     tests = grammar[1] + ['n'+x for x in grammar[1]]
     copies = [parser.copy(stateful=True) for _ in range(len(tests))]
     for test, c in zip(tests, copies):
-        correct_test(test, c, reset=False)
+        correct_test(test, c, reset=False, test_accept=False)
