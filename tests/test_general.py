@@ -3,9 +3,11 @@ import itertools
 import json
 import re
 from typing import Iterator
-from parser import MultiChoicesParser, end_symb
+from parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
 import random
+
+TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
 def appleorange_grammars():
     yield [
@@ -54,7 +56,7 @@ def grammars() -> Iterator[list[list[str]]]:
 def all_grammars() -> Iterator[list[list[str]]]:
     yield from grammars()
     yield from integer_grammars()
-    yield from alphabet_contrained_grammars()
+    yield from alphabet_constrained_grammars()
 
 def grammar_expected_next():
     to_parse = 'theorange'
@@ -68,7 +70,6 @@ def grammar_expected_next():
         'n',
         'g',
         'e',
-        (end_symb, )
     ]
     yield list(appleorange_grammars())[1], to_parse, [tuple(x) for x in nexts if not isinstance(x, tuple)]
     grammar = [
@@ -81,11 +82,10 @@ def grammar_expected_next():
         tuple('ta') + ('anapp',),
         ('le','l'),
         ('e',),
-        (end_symb, )
     ]
     yield (grammar, alphabet), to_parse, nexts
 
-def alphabet_contrained_grammars():
+def alphabet_constrained_grammars():
     yield [
         ['the', 'an', "a"],
         ['orange', 'apple', 'banana']
@@ -143,7 +143,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
     initial_parser = parser.copy()
     to_parse2 = list(to_parse)
     to_parse, success = split_according_to_alphabet(to_parse2, parser.alphabet)
-    to_parse += [end_symb]
+    to_parse += [parser.end_symb]
     if not success:
         return
     for c in to_parse:
@@ -167,7 +167,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
 
 def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     parser.reset()
-    to_parse = tuple(to_parse) + (end_symb, )
+    to_parse = tuple(to_parse) + (parser.end_symb, )
     for c in to_parse:
         assert not parser.success
         parser.step(c)
@@ -177,9 +177,11 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 
 @pytest.mark.parametrize(["grammar_alphabet", "to_parse", "nexts"],
                          grammar_expected_next())
-def test_next(grammar_alphabet, to_parse, nexts) -> None:
+@pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
+def test_next(grammar_alphabet, to_parse, nexts, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
-    parser = MultiChoicesParser(grammar, alphabet)
+    parser = MultiChoicesParser(grammar, alphabet, end_symb)
+    nexts = nexts + [(end_symb, )]
     for c, n in zip(split_according_to_alphabet(to_parse, parser.alphabet)[0] + [end_symb], nexts):
         assert sorted(parser.next()) == sorted(n)
         parser.step(c)
@@ -187,16 +189,18 @@ def test_next(grammar_alphabet, to_parse, nexts) -> None:
 
 @pytest.mark.parametrize("grammar_alphabet",
                          all_grammars())
-def test_alphabet(grammar_alphabet) -> None:    
+@pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
+def test_alphabet(grammar_alphabet, end_symb) -> None:    
     grammar, alphabet = grammar_alphabet
-    parser = MultiChoicesParser(grammar, alphabet)
+    parser = MultiChoicesParser(grammar, alphabet, end_symb)
     if alphabet is None:
         assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
 
 @pytest.mark.parametrize("grammar_alphabet", all_grammars())
-def test_parse_incorrect(grammar_alphabet) -> None:
+@pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
+def test_parse_incorrect(grammar_alphabet, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
-    parser = MultiChoicesParser(grammar, alphabet)
+    parser = MultiChoicesParser(grammar, alphabet, end_symb)
     to_parse_incorrect = [
         ('z'),
         ("them"),
@@ -209,10 +213,11 @@ def test_parse_incorrect(grammar_alphabet) -> None:
         incorrect_test(p, parser)
 
 @pytest.mark.parametrize('grammar_alphabet', all_grammars())
-def test_parse_correct(grammar_alphabet):
+@pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
+def test_parse_correct(grammar_alphabet, end_symb):
 
     grammar, alphabet = grammar_alphabet
-    parser = MultiChoicesParser(grammar, alphabet)
+    parser = MultiChoicesParser(grammar, alphabet, end_symb)
     to_parse_correct = [
         itertools.chain(*x) for x in itertools.product(*grammar)
     ]
@@ -220,9 +225,10 @@ def test_parse_correct(grammar_alphabet):
         correct_test(p, parser)
 
 @pytest.mark.parametrize('grammar_alphabet', appleorange_grammars())
-def test_copy(grammar_alphabet):
+@pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
+def test_copy(grammar_alphabet, end_symb):
     grammar, alphabet = grammar_alphabet
-    parser = MultiChoicesParser(grammar, alphabet)
+    parser = MultiChoicesParser(grammar, alphabet, end_symb)
 
     parser.step('a')
     tests = grammar[1] + ['n'+x for x in grammar[1]]
