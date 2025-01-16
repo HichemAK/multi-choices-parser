@@ -23,9 +23,6 @@ class End:
     def __hash__(self) -> int:
         return id(self)
 
-# Do not instantiate more than one End
-end_symb = End()
-
 def insert_branch_into_tree(tree : dict, branch : dict) -> None:
     if tree is branch or not (dict == type(tree) == type(branch)):
         return
@@ -36,7 +33,7 @@ def insert_branch_into_tree(tree : dict, branch : dict) -> None:
         else:
             insert_branch_into_tree(vt, vb)
 
-def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], alphabet : tuple[str | tuple[int]] = None) -> tuple[dict, tuple]:
+def tree_from_list_of_choices(list_of_choices : list[list[str | list[int]]], end_symb, alphabet : tuple[str | tuple[int]] = None) -> tuple[dict, tuple]:
     root = {}
     alphaset = set()
     common_leaf = root
@@ -153,7 +150,7 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
         node.pop(ch, None)
     
 
-def unfold_authorized_characters(where_am_i : dict | None, authorized : set):
+def unfold_authorized_characters(where_am_i : dict | None, authorized : set, end_symb):
     if where_am_i is None:
         return authorized
     if where_am_i is end_symb:
@@ -163,10 +160,10 @@ def unfold_authorized_characters(where_am_i : dict | None, authorized : set):
         if len(k):
             authorized.add(k)
         else:
-            unfold_authorized_characters(v, authorized)
+            unfold_authorized_characters(v, authorized, end_symb)
     return authorized
 
-def unfold_where_am_i(where_am_i : dict | None, current : dict) -> dict:
+def unfold_where_am_i(where_am_i : dict | None, current : dict, end_symb) -> dict:
     if where_am_i is None:
         return current
     if where_am_i is end_symb:
@@ -180,10 +177,11 @@ def unfold_where_am_i(where_am_i : dict | None, current : dict) -> dict:
             else:
                 insert_branch_into_tree(vc, v)
         else:
-            unfold_where_am_i(v, current)
+            unfold_where_am_i(v, current, end_symb)
     return current
 
-                    
+
+DEFAULT_END_SYMB = End()
 
 class MultiChoicesParser:
     """A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
@@ -214,12 +212,13 @@ class MultiChoicesParser:
 
     NOTE: It is possible to use other types of sequences that strings as choices, such as a list of integers.
     """
-    def __init__(self, list_of_choices : list[list[str | tuple[int]]] | None, alphabet : list = None) -> None:
+    def __init__(self, list_of_choices : list[list[str | tuple[int]]] | None, alphabet : list = None, end_symb=DEFAULT_END_SYMB) -> None:
         """Initialize the parser using a list of choices (a list of lists) which correspond 
         to the lists introduced in the documentation of the class
         """
+        self.end_symb = end_symb
         if list_of_choices is not None:
-            self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices, alphabet)
+            self.tree, self.alphabet = tree_from_list_of_choices(list_of_choices, end_symb, alphabet)
         else:
             self.tree, self.alphabet = {}, tuple()
         self.reset()
@@ -237,7 +236,7 @@ class MultiChoicesParser:
         """
         if self.finished:
             return tuple()
-        return tuple(unfold_authorized_characters(self.where_am_i, set()))
+        return tuple(unfold_authorized_characters(self.where_am_i, set(), self.end_symb))
     
     def step(self, ch : str | int | tuple[int] | End) -> None:
         """Feed the character to the parser.
@@ -248,23 +247,23 @@ class MultiChoicesParser:
         Args:
             ch (str): A charachter or End symbol 
         """
-        assert isinstance(ch, (str,tuple,int,End))
+        assert isinstance(ch, (str,tuple,int,End)) or ch is self.end_symb
         if self.finished:
             return
         
         # Format int to tuple
-        if isinstance(ch,int):
+        if isinstance(ch,int) and ch is not self.end_symb:
             ch = (ch,)
         
-        where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict())
+        where_am_i_unfolded = unfold_where_am_i(self.where_am_i, dict(), self.end_symb)
         next = where_am_i_unfolded.get(ch)
-        if next == 0 and ch is end_symb:
+        if next == 0 and ch is self.end_symb:
             self.success = True
             self.finished = True
         elif next is None:
             self.success = False
             self.finished = True
-        elif ch is not end_symb:
+        elif ch is not self.end_symb:
             self.buf.append(ch)
         self.where_am_i = next
     
@@ -282,6 +281,7 @@ class MultiChoicesParser:
         c = MultiChoicesParser.init_empty()
         c.tree = self.tree
         c.alphabet = self.alphabet
+        c.end_symb = self.end_symb
         if stateful:
             c.finished = self.finished
             c.success = self.success
@@ -295,12 +295,12 @@ class MultiChoicesParser:
         """Check whether the input string is correct according to this parser"""
         current = self.where_am_i
         for s in string:
-            where_am_i_unfolded = unfold_where_am_i(current, dict())
+            where_am_i_unfolded = unfold_where_am_i(current, dict(), self.end_symb)
             current = where_am_i_unfolded.get(s, None)
             if current is None:
                 return False
-            if current is end_symb:
-                current = {end_symb : 0 if s is end_symb else None}
+            if current is self.end_symb:
+                current = {self.end_symb : 0 if s is self.end_symb else None}
         return True
     
     # [parser1 == parser2 or hash(parser1) == hash(parser2)] ===> parser1 and parser2 will behave exactly the same 
