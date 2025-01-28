@@ -1,1 +1,6 @@
 from multi_choices_parser.parser import MultiChoicesParser, DEFAULT_END_SYMB
+
+from multi_choices_parser._core import hello_from_bin
+
+def main() -> None:
+    print(hello_from_bin())
