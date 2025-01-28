@@ -7,7 +7,8 @@ authors = [
     { name = "Hichem Ammar Khodja", email = "hichem5696@gmail.com" }
 ]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+]
 
 [project.urls]
 Homepage = "https://github.com/HichemAK/multi-choices-parser"
@@ -23,4 +24,7 @@ build-backend = "hatchling.build"
 dev = [
     "ipykernel>=6.29.5",
     "pytest>=7.4.4",
+]
+rustworkx = [
+    "rustworkx>=0.16.0"
 ]
