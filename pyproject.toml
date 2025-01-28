@@ -24,6 +24,3 @@ dev = [
     "ipykernel>=6.29.5",
     "pytest>=7.4.4",
 ]
-marisa = [
-    "marisa-trie>=1.2.1",
-]
