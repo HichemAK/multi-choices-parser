@@ -128,8 +128,8 @@ def adapt_to_alphabet(root : dict, alphabet : tuple[str | tuple[int]]) -> None:
                         past_node[multilength_ch] = current_node
                     else:
                         insert_branch_into_tree(d, current_node)
-
-            if len(ch := chain[-1]) == 1 and ch not in alphaset:
+            ch = chain[-1]
+            if len(ch) == 1 and ch not in alphaset:
                 # print("Removing links of character '%s'" % ch)
                 link = (id(node_pointers[-2]), ch)
                 if link not in links_to_delete:
@@ -196,7 +196,7 @@ class MultiChoicesParser:
     
     listm: choicem_1 | choicem_2 | ... | choicem_km
 
-    where choicex_y are all literals (strings) and can possibly be empty
+    where choicex_y is a sequence (string or list of integers) and can possibly be empty
 
     Example:
     start: det noun
@@ -208,7 +208,7 @@ class MultiChoicesParser:
     This was particularly optimized when the size of the lists of choices is 
     very large (up to order of millions), which can be helpful
     to represent entities preceeded (or not) by a determinent. 
-    For example, in Wikipedia, there are around 7 million entities (one article per entity).
+    For example, in Wikipedia, there are around 7 million entities.
 
     NOTE: It is possible to use other types of sequences that strings as choices, such as a list of integers.
     """
@@ -314,3 +314,5 @@ class MultiChoicesParser:
     def __hash__(self) -> int:
         return sum(hash(x) for x in (id(self.alphabet), id(self.where_am_i), 
                                      id(self.tree), self.finished, self.success))
+
+

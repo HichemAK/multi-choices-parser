@@ -1,9 +1,8 @@
 import os.path as osp
 import itertools
 import json
-import re
 from typing import Iterator
-from parser import MultiChoicesParser, DEFAULT_END_SYMB
+from multi_choices_parser.parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
 import random
 
