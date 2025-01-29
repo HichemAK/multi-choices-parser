@@ -21,34 +21,43 @@ struct ParserNode {
     std::vector<Transition> transitions;
 };
 
+template <typename T, typename Compare>
+typename std::vector<T>::iterator insertIntoOrderedVector(
+    std::vector<T>& vec, 
+    const T& element, 
+    Compare comp) 
+{
+    auto it = std::lower_bound(vec.begin(), vec.end(), element, comp); // Find the correct position
+    if (it == vec.end() || comp(element, *it)) { // Ensure no duplication
+        return vec.insert(it, element); // Insert the element if not a duplicate
+    }
+    return it; // Return iterator to the existing element
+}
+
+auto comp_characters = [](const Transition& a, const Transition& b) {
+    return a.character < b.character;
+};
+
 // Function to add a sequence to a tree
+// Returns the last node before final_node
 std::shared_ptr<ParserNode> add_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequence, const std::shared_ptr<ParserNode> final_node) {
     auto current_node = root;
 
     for (size_t i = 0; i < sequence.size(); i++) {
         auto character = sequence[i];
-        auto it = std::lower_bound(
-            current_node->transitions.begin(),
-            current_node->transitions.end(),
-            Transition{character, nullptr}
-        );
 
-        if (it == current_node->transitions.end() || it->character != character) {
-            std::shared_ptr<ParserNode> new_node;
-            if (i < sequence.size()-1){
-                new_node = std::make_shared<ParserNode>();
-            }
-            else{
-                new_node = final_node;
-            }
-            
-            current_node->transitions.insert(it, {character, new_node});
-            current_node = new_node;
-        } else {
-            current_node = it->next;
+        std::shared_ptr<ParserNode> new_node;
+        if (i < sequence.size()-1){
+            new_node = std::make_shared<ParserNode>();
         }
-    }
+        else{
+            new_node = final_node;
+        }
+        auto to_add = Transition{character, new_node};
 
+        auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
+        current_node = it->next;
+    }
     return current_node;
 }
 
@@ -57,7 +66,7 @@ std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(const std::vector
     auto root = std::make_shared<ParserNode>();
     bool is_nullable = false;
     
-    for (size_t i; i<group.size(); i++) {
+    for (size_t i = 0; i<group.size(); i++) {
         const auto& sequence = group[i];
         if (sequence.empty()) {
             is_nullable = true; // Mark the group as nullable if it contains an empty sequence
@@ -70,11 +79,10 @@ std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(const std::vector
 }
 
 // Function to connect multiple group trees with epsilon transitions
-std::shared_ptr<ParserNode> connect_trees(
+void connect_trees(
     const std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees,
     const std::vector<std::shared_ptr<ParserNode>> final_nodes
 ) {
-    auto root = std::make_shared<ParserNode>();
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
         auto group_tree = std::get<0>(group_trees[i]);
@@ -91,7 +99,6 @@ std::shared_ptr<ParserNode> connect_trees(
             }
         }
     }
-    return root;
 }
 
 
@@ -113,7 +120,8 @@ std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::ve
     }
 
     // Connect the group trees with epsilon transitions
-    return connect_trees(group_trees, final_nodes);
+    connect_trees(group_trees, final_nodes);
+    return std::get<0>(group_trees[0]);
 }
 
 
