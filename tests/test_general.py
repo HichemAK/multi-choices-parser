@@ -9,7 +9,7 @@ import random
 
 TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
-PARSER_CLASSES = [MultiChoicesParser]
+PARSER_CLASSES = [FastMultiChoicesParser]
 
 def appleorange_grammars():
     yield [
@@ -121,6 +121,8 @@ def alphabet_constrained_grammars():
     # ['.']], ["Ġ" + x for x in alphabet]
 
 def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> tuple[list, bool]:
+    if alphabet is None:
+        return text, True
     res = []
     alphaset = set(alphabet)
     buf = []
