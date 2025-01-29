@@ -4,3 +4,6 @@
 target
 .venv
 dist
+CMakeFiles
+CMakeCache.txt
+build
