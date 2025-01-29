@@ -44,16 +44,51 @@ void add_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequ
     }
 }
 
-// Function to construct the tree from a list of sequences
-std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<int>>& sequences) {
+void construct_tree_recursive(
+    std::shared_ptr<ParserNode> current_node,
+    const std::vector<std::vector<std::vector<int>>>& groups,
+    size_t group_index
+) {
+    if (group_index == groups.size()) {
+        return; // Base case: no more groups to process
+    }
+
+    // Process the current group
+    for (const auto& sequence : groups[group_index]) {
+        auto node = current_node;
+
+        // Add the current sequence to the tree
+        for (int character : sequence) {
+            auto it = std::lower_bound(
+                node->transitions.begin(),
+                node->transitions.end(),
+                Transition{character, nullptr}
+            );
+
+            if (it == node->transitions.end() || it->character != character) {
+                auto new_node = std::make_shared<ParserNode>();
+                node->transitions.insert(it, {character, new_node});
+                node = new_node;
+            } else {
+                node = it->next;
+            }
+        }
+
+        // Recursively process the next group
+        construct_tree_recursive(node, groups, group_index + 1);
+    }
+}
+
+// Generalized construct_tree function
+std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
     auto root = std::make_shared<ParserNode>();
 
-    for (const auto& sequence : sequences) {
-        add_sequence(root, sequence);
-    }
+    // Start recursive construction from the root and the first group
+    construct_tree_recursive(root, groups, 0);
 
     return root;
 }
+
 
 // Function to check if a sequence is accepted by the tree
 bool accepts(const std::shared_ptr<ParserNode>& root, const std::vector<int>& sequence) {
