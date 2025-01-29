@@ -62,6 +62,58 @@ std::shared_ptr<ParserNode> step(std::shared_ptr<ParserNode> node, int character
     return nullptr;
 }
 
+void add_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequence) {
+    auto current_node = root;
+
+    for (int character : sequence) {
+        // Find if the character already exists in the current node's transitions
+        auto temp = current_node->transitions;
+        std::shared_ptr<LinkedListTransition> prev = nullptr;
+        bool found = false;
+
+        while (temp) {
+            if (temp->transition.character == character) {
+                // Move to the next node
+                current_node = temp->transition.next;
+                found = true;
+                break;
+            }
+            prev = temp;
+            temp = temp->next;
+        }
+
+        if (!found) {
+            // Create a new node and transition
+            auto new_node = std::make_shared<ParserNode>();
+            auto new_transition = std::make_shared<LinkedListTransition>();
+            new_transition->transition.character = character;
+            new_transition->transition.next = new_node;
+
+            // Add the new transition to the linked list
+            if (prev) {
+                prev->next = new_transition;
+            } else {
+                current_node->transitions = new_transition;
+            }
+
+            // Move to the new node
+            current_node = new_node;
+        }
+    }
+}
+
+// Function to construct the tree from a list of sequences
+std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<int>>& sequences) {
+    auto root = std::make_shared<ParserNode>();
+
+    for (const auto& sequence : sequences) {
+        add_sequence(root, sequence);
+    }
+
+    return root;
+}
+
+
 // Expose the code to Python
 PYBIND11_MODULE(_core, m) {
     m.doc() = "pybind11 ParserNode module";
@@ -91,5 +143,10 @@ PYBIND11_MODULE(_core, m) {
     // Expose step function
     m.def("step", &step, R"pbdoc(
         Perform a single step in the parser with the given character.
+    )pbdoc");
+
+
+    m.def("construct_tree", &construct_tree, R"pbdoc(
+        Construct a ParserNode tree from a list of sequences of integers.
     )pbdoc");
 }
