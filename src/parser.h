@@ -22,7 +22,6 @@ struct Transition {
 // ParserNode structure
 struct ParserNode {
     std::vector<Transition> transitions; // List of transitions from this node
-    bool is_terminal = false; // Marks if this node is a terminal node
 };
 
 void collect_terminal_nodes(const std::shared_ptr<ParserNode>& root, std::vector<std::shared_ptr<ParserNode>>& next_nodes);

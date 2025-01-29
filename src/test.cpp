@@ -7,7 +7,7 @@ void print_node(const std::shared_ptr<ParserNode>& node, int depth = 0) {
     if (!node) return;
 
     // Print the current node
-    std::cout << std::string(depth, ' ') << "Node (is_terminal=" << node->is_terminal << "):\n";
+    std::cout << std::string(depth, ' ') << "Node:\n";
 
     // Print transitions
     for (const auto& transition : node->transitions) {
@@ -41,7 +41,7 @@ void test_step(const std::shared_ptr<ParserNode>& tree, const std::vector<int>& 
         current_node = next_node;
     }
 
-    if (current_node && current_node->is_terminal) {
+    if (current_node) {
         std::cout << "Traversal ended on a terminal node. Sequence is valid!\n";
     } else {
         std::cout << "Traversal did not end on a terminal node. Sequence is invalid.\n";

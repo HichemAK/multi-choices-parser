@@ -12,8 +12,7 @@ PYBIND11_MODULE(_core, m) {
     // Expose ParserNode
     py::class_<ParserNode, std::shared_ptr<ParserNode>>(m, "ParserNode")
         .def(py::init<>()) // Default constructor
-        .def_readwrite("transitions", &ParserNode::transitions)
-        .def_readwrite("is_terminal", &ParserNode::is_terminal); // Expose terminal flag
+        .def_readwrite("transitions", &ParserNode::transitions); // Expose terminal flag
 
     // Expose Transition
     py::class_<Transition>(m, "Transition")
