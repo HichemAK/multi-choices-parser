@@ -5,40 +5,46 @@ from typing import List, Tuple, Union
 
 class FastMultiChoicesParser:
     """
-    A highly efficient incremental parser for multi-choice grammars.
+    A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
+
+    start: list1 list2 ... listn
+
+    list1: choice1_1 | choice1_2 | ... | choice1_k1
+
+    list2: choice2_1 | choice2_2 | ... | choice2_k2
+
+    ...
+    
+    listm: choicem_1 | choicem_2 | ... | choicem_km
+
+    where choicex_y is a sequence of integers and can possibly be empty
+
+    Example:
+    start: det noun
+    
+    det: "the " | "an " | "a " | ""
+
+    noun: "orange" | "apple" | "banana"
+    
+    Except characters are represented as integers
+
+    This was particularly optimized when the size of the lists of choices is 
+    very large (up to order of millions), which can be helpful
+    to represent entities preceeded (or not) by a determinent. 
+    For example, in Wikipedia, there are around 7 million entities.
+
+    TODO: It is possible to use other types of sequences that strings as choices, such as a list of integers.
     """
 
     def __init__(self, list_of_choices: List[List[Union[Tuple[int], str]]], end_symb=None, *args, **kwargs) -> None:
         """
-        A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
+        Initialize the parser using a list of choices (a list of lists) which correspond
+        to the lists introduced in the documentation of the class.
 
-        start: list1 list2 ... listn
-
-        list1: choice1_1 | choice1_2 | ... | choice1_k1
-
-        list2: choice2_1 | choice2_2 | ... | choice2_k2
-
-        ...
-        
-        listm: choicem_1 | choicem_2 | ... | choicem_km
-
-        where choicex_y is a sequence of integers and can possibly be empty
-
-        Example:
-        start: det noun
-        
-        det: "the " | "an " | "a " | ""
-
-        noun: "orange" | "apple" | "banana"
-        
-        Except characters are represented as integers
-
-        This was particularly optimized when the size of the lists of choices is 
-        very large (up to order of millions), which can be helpful
-        to represent entities preceeded (or not) by a determinent. 
-        For example, in Wikipedia, there are around 7 million entities.
-
-        TODO: It is possible to use other types of sequences that strings as choices, such as a list of integers.
+        Args:
+            list_of_choices (list[list[Union[tuple[int], str]]]): The grammar choices.
+                Each choice can be a tuple of integers or a string.
+            end_symb (Union[int, str], optional): An optional end symbol to signify the end of input.
         """
         self.end_symb = end_symb
 
