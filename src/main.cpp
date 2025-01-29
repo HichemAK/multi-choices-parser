@@ -1,103 +1,45 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h> // For std::vector and other STL containers
+#include <pybind11/stl.h> // For std::vector
 #include <memory>         // For std::shared_ptr
+#include <algorithm>      // For std::lower_bound
 
 namespace py = pybind11;
 
 // Define the structures
-struct Transition;
-struct LinkedListTransition;
-
-struct ParserNode {
-    std::shared_ptr<LinkedListTransition> transitions;
-};
-
 struct Transition {
     int character;
-    std::shared_ptr<ParserNode> next;
+    std::shared_ptr<struct ParserNode> next;
+
+    // Comparison operator for sorting and binary search
+    bool operator<(const Transition& other) const {
+        return character < other.character;
+    }
 };
 
-struct LinkedListTransition {
-    Transition transition;
-    std::shared_ptr<LinkedListTransition> next;
+struct ParserNode {
+    std::vector<Transition> transitions; // Sorted vector of transitions
 };
 
-// Function to check if a sequence is accepted
-bool accepts(std::shared_ptr<ParserNode> node, const std::vector<int>& array) {
-    if (array.empty()) {
-        return true;
-    }
-    size_t i = 0;
-    while (node) {
-        bool success = false;
-        auto temp = node->transitions;
-        while (temp) {
-            if (array[i] == temp->transition.character) {
-                success = true;
-                node = temp->transition.next;
-                break;
-            }
-            temp = temp->next;
-        }
-        if (!success) {
-            return false;
-        }
-        i += 1;
-        if (i == array.size()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Function to perform a single step in the parser
-std::shared_ptr<ParserNode> step(std::shared_ptr<ParserNode> node, int character) {
-    auto temp = node->transitions;
-    while (temp) {
-        if (character == temp->transition.character) {
-            return temp->transition.next;
-        }
-        temp = temp->next;
-    }
-    return nullptr;
-}
-
+// Function to add a sequence to the tree
 void add_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequence) {
     auto current_node = root;
 
     for (int character : sequence) {
-        // Find if the character already exists in the current node's transitions
-        auto temp = current_node->transitions;
-        std::shared_ptr<LinkedListTransition> prev = nullptr;
-        bool found = false;
+        // Find the transition using binary search
+        auto it = std::lower_bound(
+            current_node->transitions.begin(),
+            current_node->transitions.end(),
+            Transition{character, nullptr}
+        );
 
-        while (temp) {
-            if (temp->transition.character == character) {
-                // Move to the next node
-                current_node = temp->transition.next;
-                found = true;
-                break;
-            }
-            prev = temp;
-            temp = temp->next;
-        }
-
-        if (!found) {
-            // Create a new node and transition
+        if (it == current_node->transitions.end() || it->character != character) {
+            // Transition not found, create a new one
             auto new_node = std::make_shared<ParserNode>();
-            auto new_transition = std::make_shared<LinkedListTransition>();
-            new_transition->transition.character = character;
-            new_transition->transition.next = new_node;
-
-            // Add the new transition to the linked list
-            if (prev) {
-                prev->next = new_transition;
-            } else {
-                current_node->transitions = new_transition;
-            }
-
-            // Move to the new node
+            current_node->transitions.insert(it, {character, new_node});
             current_node = new_node;
+        } else {
+            // Transition found, move to the next node
+            current_node = it->next;
         }
     }
 }
@@ -113,10 +55,47 @@ std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<int>>& 
     return root;
 }
 
+// Function to check if a sequence is accepted by the tree
+bool accepts(const std::shared_ptr<ParserNode>& root, const std::vector<int>& sequence) {
+    auto current_node = root;
+
+    for (int character : sequence) {
+        // Find the transition using binary search
+        auto it = std::lower_bound(
+            current_node->transitions.begin(),
+            current_node->transitions.end(),
+            Transition{character, nullptr}
+        );
+
+        if (it == current_node->transitions.end() || it->character != character) {
+            return false; // Transition not found
+        }
+
+        current_node = it->next;
+    }
+
+    return true; // All characters in the sequence were matched
+}
+
+// Function to perform a single step in the parser
+std::shared_ptr<ParserNode> step(const std::shared_ptr<ParserNode>& node, int character) {
+    // Find the transition using binary search
+    auto it = std::lower_bound(
+        node->transitions.begin(),
+        node->transitions.end(),
+        Transition{character, nullptr}
+    );
+
+    if (it != node->transitions.end() && it->character == character) {
+        return it->next; // Return the next node
+    }
+
+    return nullptr; // Transition not found
+}
 
 // Expose the code to Python
 PYBIND11_MODULE(_core, m) {
-    m.doc() = "pybind11 ParserNode module";
+    m.doc() = "pybind11 ParserNode module using std::vector";
 
     // Expose ParserNode
     py::class_<ParserNode, std::shared_ptr<ParserNode>>(m, "ParserNode")
@@ -129,11 +108,10 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("character", &Transition::character)
         .def_readwrite("next", &Transition::next);
 
-    // Expose LinkedListTransition
-    py::class_<LinkedListTransition, std::shared_ptr<LinkedListTransition>>(m, "LinkedListTransition")
-        .def(py::init<>()) // Default constructor
-        .def_readwrite("transition", &LinkedListTransition::transition)
-        .def_readwrite("next", &LinkedListTransition::next);
+    // Expose construct_tree function
+    m.def("construct_tree", &construct_tree, R"pbdoc(
+        Construct a ParserNode tree from a list of sequences of integers.
+    )pbdoc");
 
     // Expose accepts function
     m.def("accepts", &accepts, R"pbdoc(
@@ -143,10 +121,5 @@ PYBIND11_MODULE(_core, m) {
     // Expose step function
     m.def("step", &step, R"pbdoc(
         Perform a single step in the parser with the given character.
-    )pbdoc");
-
-
-    m.def("construct_tree", &construct_tree, R"pbdoc(
-        Construct a ParserNode tree from a list of sequences of integers.
     )pbdoc");
 }
