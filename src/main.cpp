@@ -38,7 +38,7 @@ PYBIND11_MODULE(_core, m) {
     // Expose step function
     m.def("step", &step, R"pbdoc(
         Perform a single step in the parser with the given character.
-        Supports epsilon transitions (-1) and returns the next ParserNode.
+        Supports epsilon transitions and returns the next ParserNode.
     )pbdoc");
 
     // Expose build_group_tree function (optional, for debugging or modular use)
