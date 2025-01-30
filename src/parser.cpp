@@ -3,23 +3,24 @@
 #include <algorithm>
 #include "constants.h"
 #include <functional>
+#include "parser.h"
 
 
 
 // Structure for a transition
-struct Transition {
-    int character; // Character for the transition (MIN_VALUE_INT32 for epsilon)
-    ParserNode* next;
+// struct Transition {
+//     int character; // Character for the transition (MIN_VALUE_INT32 for epsilon)
+//     ParserNode* next;
 
-    bool operator<(const Transition& other) const {
-        return character < other.character;
-    }
-};
+//     bool operator<(const Transition& other) const {
+//         return character < other.character;
+//     }
+// };
 
-// Structure for a parser node
-struct ParserNode {
-    std::vector<Transition> transitions;
-};
+// // Structure for a parser node
+// struct ParserNode {
+//     std::vector<Transition> transitions;
+// };
 
 template <typename T, typename Compare>
 typename std::vector<T>::iterator insertIntoOrderedVector(
@@ -62,7 +63,7 @@ ParserNode* add_sequence(ParserNode& root, const std::vector<int>& sequence, con
         else{
             new_node = final_node;
         }
-        auto to_add = Transition{character, &new_node};
+        Transition to_add = {character, &new_node};
 
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
         current_node = it->next;
@@ -147,7 +148,7 @@ void unwrap(const std::vector<Transition>& transitions, std::vector<std::referen
     int steps = min(2, transitions.size());
     for (size_t i = 0; i < steps; i++)
     {
-        auto transition = transitions[i];
+        Transition transition = transitions[i];
         if (transition.character == EPS_SYMBOL){
             if (transition.next == nullptr){
                 continue;
