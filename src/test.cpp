@@ -3,20 +3,18 @@
 #include <memory>
 #include "parser.h" // Include your parser implementation header
 
-void print_node(const std::shared_ptr<ParserNode>& node, int depth = 0) {
-    if (!node) return;
-
+void print_node(const ParserNode& node, int depth = 0) {
     // Print the current node
     std::cout << std::string(depth, ' ') << "Node:\n";
 
     // Print transitions
-    for (const auto& transition : node->transitions) {
+    for (Transition transition : node.transitions) {
         std::cout << std::string(depth + 2, ' ') << "Transition (character=" << transition.character << ")\n";
-        print_node(transition.next, depth + 4);
+        print_node(*transition.next, depth + 4);
     }
 }
 
-void test_accepts(const std::shared_ptr<ParserNode>& tree, const std::vector<std::vector<int>>& test_sequences) {
+void test_accepts(const ParserNode& tree, const std::vector<std::vector<int>>& test_sequences) {
     std::cout << "\nTesting sequences:\n";
     for (const auto& seq : test_sequences) {
         bool result = accepts(tree, seq);
@@ -26,25 +24,19 @@ void test_accepts(const std::shared_ptr<ParserNode>& tree, const std::vector<std
     }
 }
 
-void test_step(const std::shared_ptr<ParserNode>& tree, const std::vector<int>& sequence) {
+void test_step(const ParserNode& tree, const std::vector<int>& sequence) {
     std::cout << "\nTesting single-step traversal:\n";
     auto current_node = tree;
 
     for (int step_ : sequence) {
-        std::cout << "Current node: " << current_node.get() << "\n";
+        std::cout << "Current node: " << &current_node << "\n";
         auto next_node = step(current_node, step_);
         if (!next_node) {
             std::cout << "Step " << step_ << " failed! No valid transition.\n";
             break;
         }
         std::cout << "Step " << step_ << " succeeded. Moving to next node.\n";
-        current_node = next_node;
-    }
-
-    if (current_node) {
-        std::cout << "Traversal ended on a terminal node. Sequence is valid!\n";
-    } else {
-        std::cout << "Traversal did not end on a terminal node. Sequence is invalid.\n";
+        current_node = *next_node;
     }
 }
 
@@ -61,7 +53,7 @@ int main() {
 
     // Print the tree structure for debugging
     std::cout << "\nParser tree structure:\n";
-    print_node(tree);
+    print_node(*tree);
 
     // Test sequences
     std::vector<std::vector<int>> test_sequences = {
@@ -77,11 +69,11 @@ int main() {
     };
 
     // Test the accepts function
-    test_accepts(tree, test_sequences);
+    test_accepts(*tree, test_sequences);
 
     // Test single-step traversal
     std::vector<int> traversal_sequence = {2, 1, 2}; // Example valid sequence
-    test_step(tree, traversal_sequence);
+    test_step(*tree, traversal_sequence);
 
     return 0;
 }
