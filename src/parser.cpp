@@ -146,6 +146,9 @@ bool special_symb_in_transitions(const std::vector<Transition>& transitions, con
 bool special_symb_in_transitions(const ParserState& state, const SpecialSymb symb){    
     for (size_t i = 0; i < state.nodes.size(); i++)
     {
+        if(state.nodes[i] == nullptr){
+            continue;
+        }
         if (special_symb_in_transitions(state.nodes[i]->transitions, symb)){
             return true;
         }
@@ -153,7 +156,7 @@ bool special_symb_in_transitions(const ParserState& state, const SpecialSymb sym
     return false;
 }
 
-bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end, bool end_symb_mandatory) {
+bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end, bool end_symb_expected) {
     ParserState current_state = state;
     for (int character : sequence) {
         ParserState next_state;
@@ -179,16 +182,13 @@ bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end
         }
         current_state = next_state;
     }
-    if(must_end && end_symb_mandatory){
-        for (ParserNode* node : current_state.nodes)
-        {
-            if (node == nullptr){
-                return true;
-            }
+    if(must_end && end_symb_expected){
+        if (current_state.nodes.size()){
+            return current_state.nodes[0] == nullptr;
         }
         return false;
     }
-    else if (must_end && !end_symb_mandatory){
+    else if (must_end && !end_symb_expected){
         return special_symb_in_transitions(current_state, SpecialSymb::END);
     }
     return true;
