@@ -47,4 +47,7 @@ ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& gro
 bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end=false, bool end_symb_mandatory=false);
 // Function to perform a single step in the parser with the given character
 ParserState step(const ParserState& state, int character) ;
+
+bool special_symb_in_transitions(const ParserState& state, const SpecialSymb symb);
+bool special_symb_in_transitions(const std::vector<Transition>& transitions, const SpecialSymb symb);
 #endif // PARSER_H
