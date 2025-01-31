@@ -5,6 +5,9 @@
 #include <vector>
 #include <memory>
 
+enum SpecialSymb {END=-2147483647, EPS=-2147483648};
+const char NUM_SPECIAL_SYMB = 2;
+
 // Forward declaration of ParserNode
 struct ParserNode;
 
@@ -24,23 +27,24 @@ struct ParserNode {
     std::vector<Transition> transitions; // List of transitions from this node
 };
 
-void collect_terminal_nodes(const ParserNode& root, std::vector<ParserNode>& next_nodes);
+struct ParserState {
+    std::vector<ParserNode*> nodes;
+};
 
 // Function to construct a tree for a single group of sequences
-std::pair<ParserNode, bool> build_group_tree(const std::vector<std::vector<int>>& group);
+std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node);
 
 // Function to connect multiple group trees with epsilon transitions
-ParserNode connect_trees(
-    const std::vector<std::pair<ParserNode, bool>>& group_trees
+void connect_trees(
+    std::vector<std::tuple<ParserNode*, bool>>& group_trees,
+    std::vector<ParserNode*>& final_nodes
 );
 
 // Function to construct the full parser tree from groups of sequences
 ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
 
 // Function to check if the parser accepts a given sequence of characters
-bool accepts(const ParserNode& root, const std::vector<int>& sequence);
-
+bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end=false, bool end_symb_mandatory=false);
 // Function to perform a single step in the parser with the given character
-ParserNode* step(const ParserNode& node, int character);
-
+ParserState step(const ParserState& state, int character) ;
 #endif // PARSER_H

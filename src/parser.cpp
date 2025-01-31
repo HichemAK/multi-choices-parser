@@ -49,53 +49,56 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
 };
 
 // Function to add a sequence to a tree
-// Returns the last node before final_node
-ParserNode* add_sequence(ParserNode& root, const std::vector<int>& sequence, const ParserNode& final_node) {
-    auto current_node = &root;
+// Returns the last node before end_symbol if it exists
+ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, ParserNode* final_node, bool add_end_symb) {
+    auto current_node = root;
 
     for (size_t i = 0; i < sequence.size(); i++) {
         auto character = sequence[i];
 
-        ParserNode new_node;
+        ParserNode* new_node;
         if (i < sequence.size()-1){
-            new_node = ParserNode();
+            new_node = new ParserNode();
         }
         else{
             new_node = final_node;
         }
-        Transition to_add = {character, &new_node};
-
+        Transition to_add = {character, new_node};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
         current_node = it->next;
+    }
+    if (add_end_symb){
+        Transition to_add = {END, nullptr};
+        auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
     }
     return current_node;
 }
 
 // Function to build a tree for a single group
-std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, const ParserNode& final_node) {
-    auto root = ParserNode();
+std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node) {
     bool is_nullable = false;
+    ParserNode* root = new ParserNode();
     
     for (size_t i = 0; i<group.size(); i++) {
         const auto& sequence = group[i];
         if (sequence.empty()) {
             is_nullable = true; // Mark the group as nullable if it contains an empty sequence
         } else {
-            add_sequence(root, sequence, final_node);
+            add_sequence(root, sequence, final_node, i == group.size()-1);
         }
     }
 
-    return {&root, is_nullable};
+    return {root, is_nullable};
 }
 
 // Function to connect multiple group trees with epsilon transitions
 void connect_trees(
-    const std::vector<std::tuple<ParserNode*, bool>>& group_trees,
-    const std::vector<ParserNode*>& final_nodes
+    std::vector<std::tuple<ParserNode*, bool>>& group_trees,
+    std::vector<ParserNode*>& final_nodes
 ) {
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
-        auto group_tree = std::get<0>(group_trees[i]);
+        ParserNode* group_tree = std::get<0>(group_trees[i]);
         for (size_t j = i; j < n && std::get<1>(group_trees[j]); j++){
             ParserNode* arrival_node;
             // Link root of each group with nullable sequence
@@ -105,32 +108,28 @@ void connect_trees(
             else{
                 arrival_node = final_nodes.back();
             }
-            auto to_add = Transition{EPS_SYMBOL, arrival_node};
+            Transition to_add = Transition{EPS, arrival_node};
             insertIntoOrderedVector(group_tree->transitions, to_add, comp_characters);
 
             // Link final node to next root
             if (j < n-1){
-                auto to_add = Transition{EPS_SYMBOL, std::get<0>(group_trees[j+1])};
+                Transition to_add = Transition{EPS, std::get<0>(group_trees[j+1])};
                 insertIntoOrderedVector(final_nodes[j]->transitions, to_add, comp_characters);
             }
         }
     }
 }
 
-
 // Function to construct the final tree
 ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
     std::vector<std::tuple<ParserNode*, bool>> group_trees;
     // Build a tree for each group
-    std::vector<ParserNode*> final_nodes(groups.size());    
+    std::vector<ParserNode*> final_nodes;    
     for (size_t i = 0; i < groups.size(); i++)
     {
-        auto final_node = ParserNode();
-        final_nodes[i] = &final_node;
-        if (i == groups.size()-1){
-            final_node.transitions.push_back(Transition{END_SYMBOL, nullptr});
-        }
-        group_trees.push_back(build_group_tree(groups[i], final_node));
+        final_nodes.push_back(new ParserNode());
+
+        group_trees.push_back(build_group_tree(groups[i], final_nodes[i]));
     }
 
     // Connect the group trees with epsilon transitions
@@ -143,61 +142,89 @@ int min(int a, int b){
 }
 
 
-void unwrap(const std::vector<Transition>& transitions, std::vector<std::reference_wrapper<const std::vector<Transition>>>& result) {
-    result.push_back(transitions);
-    int steps = min(2, transitions.size());
-    for (size_t i = 0; i < steps; i++)
-    {
-        Transition transition = transitions[i];
-        if (transition.character == EPS_SYMBOL){
-            if (transition.next == nullptr){
-                continue;
-            }
-            unwrap(transition.next->transitions, result);
-        }
+void unwrap(const std::vector<Transition>& transitions, std::vector<const std::vector<Transition>*>& result) {
+    result.push_back(&transitions);
+    if (transitions[0].character == SpecialSymb::EPS){
+        unwrap(transitions[0].next->transitions, result);
     }
 }
 
-
-bool accepts(const ParserNode& root, const std::vector<int>& sequence) {
-    ParserNode current_node = root;
-
-    for (int character : sequence) {
-        // Unwrap epsilon transitions
-        // unwrap should return an iterator of std::vector<Transition>
-        std::vector<std::reference_wrapper<const std::vector<Transition>>> all_valid_transition_vectors = {};
-        unwrap(root.transitions, all_valid_transition_vectors);
-
-        bool success = false;
-
-        for (size_t i = 0; i < all_valid_transition_vectors.size(); i++){
-            auto it = findInVector(all_valid_transition_vectors[i].get(), Transition{character, nullptr}, comp_characters);
-            if (it != nullptr){
-                success = true;
-                break;
-            }
-        }
-        if (!success){
-            return false;
+bool special_symb_in_transitions(const std::vector<Transition>& transitions, const SpecialSymb symb){    
+    for (size_t i = 0; i < min(transitions.size(), NUM_SPECIAL_SYMB); i++)
+    {
+        if (symb == transitions[i].character){
+            return true;
         }
     }
+    return false;
+}
 
+bool special_symb_in_transitions(const ParserState& state, const SpecialSymb symb){    
+    for (size_t i = 0; i < state.nodes.size(); i++)
+    {
+        if (special_symb_in_transitions(state.nodes[i]->transitions, symb)){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end, bool end_symb_mandatory) {
+    ParserState current_state = state;
+    for (int character : sequence) {
+        ParserState next_state;
+        for (ParserNode* node : current_state.nodes)
+        {      
+            // Unwrap epsilon transitions
+            // unwrap should return an iterator of std::vector<Transition>
+            if (node == nullptr){
+                continue;
+            }
+            std::vector<const std::vector<Transition>*> all_valid_transition_vectors = {};
+            unwrap(node->transitions, all_valid_transition_vectors);
+
+            for (size_t i = 0; i < all_valid_transition_vectors.size(); i++){
+                auto it = findInVector(*all_valid_transition_vectors[i], Transition{character, nullptr}, comp_characters);
+                if (it != nullptr){
+                    next_state.nodes.push_back(it->next);
+                }
+            }
+        }
+        if (next_state.nodes.size() == 0){
+            return false;
+        }
+        current_state = next_state;
+    }
+    if(must_end && end_symb_mandatory){
+        for (ParserNode* node : current_state.nodes)
+        {
+            if (node == nullptr){
+                return true;
+            }
+        }
+        return false;
+    }
+    else if (must_end && !end_symb_mandatory){
+        return special_symb_in_transitions(current_state, SpecialSymb::END);
+    }
     return true;
 }
 
 
-ParserNode* step(const ParserNode& node, int character) {
+ParserState step(const ParserState& state, int character) {
     // Unwrap epsilon transitions
-    std::vector<std::reference_wrapper<const std::vector<Transition>>> all_valid_transition_vectors = {};
-    unwrap(node.transitions, all_valid_transition_vectors);
-    
-    for (const auto& transition_vector : all_valid_transition_vectors) {
-        for (const auto& transition : transition_vector.get()) {
-            if (transition.character == character) {
-                return transition.next; // Return the next node if the character matches
+    ParserState new_state;
+    for (ParserNode* node: state.nodes)
+    {
+        std::vector<const std::vector<Transition>*> all_valid_transition_vectors = {};
+        unwrap(node->transitions, all_valid_transition_vectors);
+        
+        for (size_t i = 0; i < all_valid_transition_vectors.size(); i++){
+            auto it = findInVector(*all_valid_transition_vectors[i], Transition{character, nullptr}, comp_characters);
+            if (it != nullptr){
+                new_state.nodes.push_back(it->next);
             }
         }
     }
-    
-    return nullptr; // Return nullptr if no valid transition is found
+    return new_state; // Return nullptr if no valid transition is found
 }
