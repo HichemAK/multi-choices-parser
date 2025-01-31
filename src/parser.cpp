@@ -6,22 +6,6 @@
 #include "parser.h"
 
 
-
-// Structure for a transition
-// struct Transition {
-//     int character; // Character for the transition (MIN_VALUE_INT32 for epsilon)
-//     ParserNode* next;
-
-//     bool operator<(const Transition& other) const {
-//         return character < other.character;
-//     }
-// };
-
-// // Structure for a parser node
-// struct ParserNode {
-//     std::vector<Transition> transitions;
-// };
-
 template <typename T, typename Compare>
 typename std::vector<T>::iterator insertIntoOrderedVector(
     std::vector<T>& vec, 
