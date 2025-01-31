@@ -3,17 +3,6 @@
 #include <memory>
 #include "parser.h" // Include your parser implementation header
 
-// void print_node(const ParserNode& node, int depth = 0) {
-//     // Print the current node
-//     std::cout << std::string(depth, ' ') << "Node:\n";
-
-//     // Print transitions
-//     for (Transition transition : node.transitions) {
-//         std::cout << std::string(depth + 2, ' ') << "Transition (character=" << transition.character << ")\n";
-//         print_node(*transition.next, depth + 4);
-//     }
-// }
-
 void test_accepts(ParserNode* tree, const std::vector<std::vector<int>>& test_sequences) {
     ParserState state;
     state.nodes.push_back(tree);
@@ -60,7 +49,7 @@ int main() {
 
     // Test sequences
     std::vector<std::vector<int>> test_sequences = {
-        {1, 2},     // Valid (nullable group)
+        {1, 2, SpecialSymb::END},     // Valid (nullable group)
         {1, 4},     // Valid (nullable group)
         {2, 3},     // Invalid
         {1, 1, 2},  // Valid
