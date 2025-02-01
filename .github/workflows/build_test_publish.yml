@@ -84,8 +84,29 @@ jobs:
           CIBW_TEST_COMMAND: "python -m pytest {project}/tests"
           CIBW_SKIP: pp*
           CIBW_TEST_REQUIRES: pytest
+      
+      - name: Upload Wheel to GitHub Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: python-wheels
+          path: dist/*.whl
+
+  publish:
+      runs-on: ubuntu-latest
+      needs: build_and_test  # This job depends on the 'build' job to complete first
+
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
 
+      - name: Download Wheels from Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: python-wheels
+          path: dist/
+        # Downloads the wheels from the build job's artifacts
+      
       - name: Install built wheel
         run: pip install --no-index --find-links=dist multi-choices-parser
 
@@ -104,3 +125,8 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Delete Artifacts
+        uses: actions/delete-artifact@v2
+        with:
+          name: python-wheels
