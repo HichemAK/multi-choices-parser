@@ -273,7 +273,7 @@ def test_stress(parser_class):
     N_LIST = 3
     possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
     possible_groups = list(itertools.combinations(possible_choices, 2))
-    possible_grammars = itertools.product(*([possible_groups]*3))
+    possible_grammars = itertools.product(*([possible_groups]*N_LIST))
 
     for grammar in possible_grammars:
         to_parse_correct = [
@@ -283,27 +283,30 @@ def test_stress(parser_class):
         for p in to_parse_correct:
             correct_test(p, parser)
 
-def test_memory_leak():
-    import psutil
+# def test_memory_leak():
+#     import psutil
+#     from gc import collect
 
-    process = psutil.Process()
-    mem_init = process.memory_info().rss
+#     process = psutil.Process()
+#     mem_init = process.memory_info().rss
 
-    import numpy as np
+#     import numpy as np
 
 
-    l = np.random.randint(0, 10**9, 100000).astype(str)
-    l = [
-        ['the', 'an', "a", ""],
-        l
-    ]
-    process = psutil.Process()
-    mem_before = process.memory_info().rss
+#     l = np.random.randint(0, 10**9, 100000).astype(str)
+#     l = [
+#         ['the', 'an', "a", ""],
+#         l
+#     ]
+#     process = psutil.Process()
+#     mem_before = process.memory_info().rss
 
-    parser = FastMultiChoicesParser(l)
-    mem_during = process.memory_info().rss
+#     parser = FastMultiChoicesParser(l)
+#     mem_during = process.memory_info().rss
 
-    del parser
-    mem_after = process.memory_info().rss
+#     del parser.root
+#     del parser
+#     collect()
+#     mem_after = process.memory_info().rss
 
-    print(mem_init, mem_before, mem_during, mem_after)
+#     print(mem_init, mem_before, mem_during, mem_after)

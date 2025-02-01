@@ -22,8 +22,8 @@ PYBIND11_MODULE(_core, m) {
     py::class_<Transition>(m, "Transition")
         .def(py::init<>()) // Default constructor
         .def_readwrite("character", &Transition::character)
-        .def_readwrite("next", &Transition::next)
-        .def("__lt__", &Transition::operator<); // Expose comparison operator
+        .def_readwrite("next", &Transition::next);
+        // .def("__lt__", &Transition::operator<); // Expose comparison operator
 
     // Expose ParserNode
     py::class_<ParserNode, std::shared_ptr<ParserNode>>(m, "ParserNode")
@@ -35,7 +35,7 @@ PYBIND11_MODULE(_core, m) {
     py::class_<ParserState>(m, "ParserState")
         .def(py::init<>()) // Default constructor
         .def_readwrite("nodes", &ParserState::nodes)
-        .def("add_node", &ParserState::add_node, "Add a node to the state")
+        .def("add_node", &ParserState::add_node, "Add a node to the state");
 
     // Expose build_group_tree function
     m.def("build_group_tree", &build_group_tree, R"pbdoc(
