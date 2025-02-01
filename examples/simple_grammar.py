@@ -1,4 +1,4 @@
-from multi_choices_parser import MultiChoicesParser, end_symb
+from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 
 
 l = [
@@ -6,9 +6,8 @@ l = [
     ['orange', 'apple', 'banana']
 ]
 p = MultiChoicesParser(l)
-print(sorted(p.alphabet))
 
-for i, c in enumerate(tuple("apple") + (end_symb, )):
+for i, c in enumerate(tuple("apple") + (DEFAULT_END_SYMB, )):
     print('Step %s' % i)
     print("Authorized characters:", sorted(p.next()))
     print('Adding character:', c)

@@ -1,2 +1,1 @@
-from multi_choices_parser.parser import MultiChoicesParser, DEFAULT_END_SYMB
-from multi_choices_parser.fast_parser import FastMultiChoicesParser
+from .parser import MultiChoicesParser, DEFAULT_END_SYMB
