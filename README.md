@@ -1,7 +1,7 @@
 # Multi-choices Parser
 
 ## Overview
-Multi-choices Parser is a C++ efficient incremental parser for multi-choices grammars with Python bindings. These grammars are defined as a composition of lists of choices, where each choice is a literal string and can possibly be empty (grammar form below). This parser is optimized for scenarios where the size of the lists of choices is very large, such as representing entities preceded by a determiner.
+Multi-choices Parser is a C++ efficient incremental parser for multi-choices grammars with Python bindings (3.7+). These grammars are defined as a composition of lists of choices, where each choice is a literal string and can possibly be empty (grammar form below). This parser is optimized for scenarios where the size of the lists of choices is very large, such as representing entities preceded by a determiner.
 
 Here is the type of grammar handled by this parser:
 
