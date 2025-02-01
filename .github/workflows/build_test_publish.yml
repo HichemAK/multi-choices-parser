@@ -51,18 +51,17 @@ jobs:
             echo "::set-output name=version_changed::true"
           fi
 
-
-
   build_and_test:
-    name: Build & Test on ${{ matrix.os }} (Python ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    name: Build & Test on ${{ matrix.platform[0] }}
+    runs-on: ${{ matrix.platform[1] }}
     needs: check_version
     if: needs.check_version.outputs.version_changed == 'true'
 
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        platform: [[linux, ubuntu-latest], [macos, macos-latest], [windows, windows-latest]]
+        # platform: [[linux, ubuntu-latest]]
+        # python-version: [3.8, 3.9, 3.10, 3.11, 3.12, 3.13]  # Modify as needed
 
     steps:
       - name: Checkout repository
@@ -71,16 +70,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.13
 
       - name: Install dependencies
         run: |
           pip install cibuildwheel pytest pytest-cov codecov
 
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir dist
+        run: |
+          python -m cibuildwheel --output-dir dist --platform ${{ matrix.platform[0] }} \
+          --arch auto64
         env:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_TEST_COMMAND: "python -m pytest {project}/tests"
+          CIBW_SKIP: pp*
+          CIBW_TEST_REQUIRES: pytest
+
 
       - name: Install built wheel
         run: pip install --no-index --find-links=dist multi-choices-parser
@@ -94,29 +99,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
-
-  publish_pypi:
-    name: Publish to PyPI
-    needs: [build_and_test, check_version]
-    if: needs.check_version.outputs.version_changed == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install cibuildwheel
-        run: pip install cibuildwheel
-
-      - name: Build wheels
-        run: python -m cibuildwheel --output-dir dist
-        env:
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
