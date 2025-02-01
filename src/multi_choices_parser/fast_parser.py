@@ -59,10 +59,16 @@ class FastMultiChoicesParser:
         self.can_be_empty = []
         if self.string_mode:
             list_of_choices = [[[ord(ch) for ch in choice] for choice in choices] for choices in list_of_choices]
-        self.root = _core.construct_tree(list_of_choices)
+        
+        if len(list_of_choices):
+            self.root = _core.construct_tree(list_of_choices)
 
-        # Initialize the current state
-        self.current_state = [self.root]
+            # Initialize the current state
+            self.current_state = _core.ParserState()
+            self.current_state.add_node(self.root)
+        else:
+            self.root = None
+            self.current_state = None
 
         # Initialize success and finished flags
         self.success = False
@@ -77,10 +83,10 @@ class FastMultiChoicesParser:
             tuple: A tuple of characters (if in string mode) or integers, or the End symbol.
         """
         # Collect all possible transitions from the current state
-        transitions = set(transition.character for node in self.current_state for transition in node.transitions)
+        transitions = set(transition.character for node in self.current_state.nodes for transition in node.transitions)
         if self.string_mode:
             # Convert integers to characters if in string mode
-            return set(chr(ch) if ch is not self.end_symb else _core.SpecialSymb.END for ch in transitions)
+            return set(chr(ch) if ch is not self.end_symb else ch for ch in transitions)
         return transitions
 
     def step(self, ch: Union[int, str]) -> None:
@@ -92,10 +98,12 @@ class FastMultiChoicesParser:
         """
         if ch is self.end_symb:
             ch = _core.SpecialSymb.END
+        elif isinstance(ch, str):
+            ch = ord(ch)
         self.current_state = _core.step(self.current_state, ch)
-        if len(self.current_state.transitions):
+        if len(self.current_state.nodes) == 0:
             self.finished = True
-        elif self.current_state.transitions[0] is None:
+        elif self.current_state.nodes[0] is None:
             self.finished = True
             self.success = True
 
@@ -103,7 +111,8 @@ class FastMultiChoicesParser:
         """
         Reset the state of the parser to its origin.
         """
-        self.current_state = [self.root]
+        self.current_state = _core.ParserState()
+        self.current_state.add_node(self.root)
         self.success = False
         self.finished = False
 
@@ -119,7 +128,7 @@ class FastMultiChoicesParser:
         Returns:
             FastMultiChoicesParser: A new parser instance.
         """
-        new_parser = FastMultiChoicesParser([], self.end_symb)
+        new_parser = FastMultiChoicesParser([], end_symb=self.end_symb)
         new_parser.root = self.root  # Share the same roots
         new_parser.string_mode = self.string_mode
         if stateful:
@@ -130,7 +139,7 @@ class FastMultiChoicesParser:
             new_parser.reset()
         return new_parser
 
-    def accepts(self, string: Union[Tuple[int], str]) -> bool:
+    def accepts(self, string: Union[Tuple[int], str], must_end=False) -> bool:
         """
         Check whether the input string is correct according to this parser.
 
@@ -144,7 +153,7 @@ class FastMultiChoicesParser:
         if self.string_mode:
             string = tuple(ord(ch) if ch is not self.end_symb else _core.SpecialSymb.END for ch in string)
 
-        return _core.accepts(self.current_state, string)
+        return _core.accepts(self.current_state, string, must_end, True)
 
     def __eq__(self, other: object) -> bool:
         """
@@ -160,7 +169,7 @@ class FastMultiChoicesParser:
             return False
         return (
             self.root is other.root
-            and self.current_state == other.current_state
+            and self.current_state is other.current_state
         )
 
     def __hash__(self) -> int:
@@ -170,7 +179,7 @@ class FastMultiChoicesParser:
         Returns:
             int: The hash value.
         """
-        return hash((id(self.root), self.current_state))
+        return hash((id(self.root), id(self.current_state)))
     
     def free(self):
         self.root.free_memory()

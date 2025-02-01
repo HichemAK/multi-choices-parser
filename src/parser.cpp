@@ -59,7 +59,7 @@ ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, Par
 }
 
 // Function to build a tree for a single group
-std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node) {
+std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node, bool add_end_symbol) {
     bool is_nullable = false;
     ParserNode* root = new ParserNode();
     
@@ -68,7 +68,7 @@ std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int
         if (sequence.empty()) {
             is_nullable = true; // Mark the group as nullable if it contains an empty sequence
         } else {
-            add_sequence(root, sequence, final_node, i == group.size()-1);
+            add_sequence(root, sequence, final_node, add_end_symbol);
         }
     }
 
@@ -83,6 +83,8 @@ void connect_trees(
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
         ParserNode* group_tree = std::get<0>(group_trees[i]);
+        Transition to_add = Transition{EPS, std::get<0>(group_trees[i+1])};
+        insertIntoOrderedVector(final_nodes[i]->transitions, to_add, comp_characters);
         for (size_t j = i; j < n && std::get<1>(group_trees[j]); j++){
             ParserNode* arrival_node;
             // Link root of each group with nullable sequence
@@ -94,12 +96,6 @@ void connect_trees(
             }
             Transition to_add = Transition{EPS, arrival_node};
             insertIntoOrderedVector(group_tree->transitions, to_add, comp_characters);
-
-            // Link final node to next root
-            if (j < n-1){
-                Transition to_add = Transition{EPS, std::get<0>(group_trees[j+1])};
-                insertIntoOrderedVector(final_nodes[j]->transitions, to_add, comp_characters);
-            }
         }
     }
 }
@@ -113,7 +109,7 @@ ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& gro
     {
         final_nodes.push_back(new ParserNode());
 
-        group_trees.push_back(build_group_tree(groups[i], final_nodes[i]));
+        group_trees.push_back(build_group_tree(groups[i], final_nodes[i], i == groups.size()-1));
     }
 
     // Connect the group trees with epsilon transitions
