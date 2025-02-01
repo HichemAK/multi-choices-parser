@@ -26,17 +26,21 @@ jobs:
       - name: Check if version has changed
         id: version_check
         run: |
-          VERSION_CHANGED=$(git diff --name-only $GITHUB_SHA^ $GITHUB_SHA | grep -E '^pyproject.toml$' && git diff -U0 $GITHUB_SHA^ $GITHUB_SHA pyproject.toml | grep -E '^\+version =')
+          # Fetch previous commit history
+          git fetch --depth=2
+
+          # Check if pyproject.toml has changed and if the version field has changed
+          VERSION_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -E '^pyproject.toml$' && git diff -U0 HEAD^ HEAD pyproject.toml | grep -E '^\+version =')
+          
           if [ -z "$VERSION_CHANGED" ]; then
             echo "Version not changed. Skipping build."
-            echo "version_changed=false" >> $GITHUB_ENV
             echo "::set-output name=version_changed::false"
             exit 0
           else
             echo "Version has changed."
-            echo "version_changed=true" >> $GITHUB_ENV
             echo "::set-output name=version_changed::true"
           fi
+
 
   build_and_test:
     name: Build & Test on ${{ matrix.os }} (Python ${{ matrix.python-version }})
