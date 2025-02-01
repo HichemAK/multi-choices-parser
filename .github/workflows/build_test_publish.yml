@@ -78,8 +78,7 @@ jobs:
 
       - name: Build wheels
         run: |
-          python -m cibuildwheel --output-dir dist --platform ${{ matrix.platform[0] }} \
-          --arch auto64
+          python -m cibuildwheel --output-dir dist --platform ${{ matrix.platform[0] }} --arch auto64
         env:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_TEST_COMMAND: "python -m pytest {project}/tests"
