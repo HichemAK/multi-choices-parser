@@ -1,3 +1,5 @@
+[![Coverage](https://codecov.io/gh/HichemAK/multi-choices-parser/branch/main/graph/badge.svg)](https://codecov.io/gh/HichemAK/multi-choices-parser)
+
 # Multi-choices Parser
 
 ## Overview

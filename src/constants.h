@@ -1,2 +1,0 @@
-// #define EPS_SYMBOL -2147483648
-// #define END_SYMBOL -2147483647
