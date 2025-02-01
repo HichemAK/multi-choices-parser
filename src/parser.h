@@ -25,10 +25,37 @@ struct Transition {
 // ParserNode structure
 struct ParserNode {
     std::vector<Transition> transitions; // List of transitions from this node
+
+    // Recursively delete all nodes reachable from this node
+    void delete_recursive() {
+        for (Transition& transition : transitions) {
+            if (transition.next) {
+                transition.next->delete_recursive(); // Recursively delete the next node
+                delete transition.next; // Delete the next node
+                transition.next = nullptr; // Set the pointer to null
+            }
+        }
+    }
 };
 
 struct ParserState {
     std::vector<ParserNode*> nodes;
+
+    // Add a node to the state
+    void add_node(ParserNode* node) {
+        nodes.push_back(node);
+    }
+
+    // Free memory for all nodes in the state, recursively
+    void free_memory() {
+        for (ParserNode* node : nodes) {
+            if (node) {
+                node->delete_recursive(); // Recursively delete all reachable nodes
+                delete node; // Delete the current node
+            }
+        }
+        nodes.clear(); // Clear the vector after deleting the nodes
+    }
 };
 
 // Function to construct a tree for a single group of sequences
@@ -44,7 +71,8 @@ void connect_trees(
 ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
 
 // Function to check if the parser accepts a given sequence of characters
-bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end=false, bool end_symb_mandatory=false);
+bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end, bool end_symb_expected);
+
 // Function to perform a single step in the parser with the given character
 ParserState step(const ParserState& state, int character) ;
 
