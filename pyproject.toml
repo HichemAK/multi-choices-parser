@@ -27,5 +27,6 @@ build-backend = "scikit_build_core.build"
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",
+    "numpy>=2.2.2",
     "pytest>=7.4.4",
 ]

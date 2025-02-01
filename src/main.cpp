@@ -28,7 +28,8 @@ PYBIND11_MODULE(_core, m) {
     // Expose ParserNode
     py::class_<ParserNode>(m, "ParserNode")
         .def(py::init<>()) // Default constructor
-        .def_readwrite("transitions", &ParserNode::transitions);
+        .def_readwrite("transitions", &ParserNode::transitions)
+        .def("delete_recursive", &ParserNode::delete_recursive, "Free memory for all reachable nodes, recursively");
 
     // Expose ParserState
     py::class_<ParserState>(m, "ParserState")
@@ -61,6 +62,10 @@ PYBIND11_MODULE(_core, m) {
         Check if the parser accepts the given sequence of characters.
         This function dynamically traverses the tree, following both character
         transitions and epsilon transitions.
+    )pbdoc");
+
+    m.def("next", &next, R"pbdoc(
+        Get next possible characters given Parser state
     )pbdoc");
 
     // Expose step function
