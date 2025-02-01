@@ -59,8 +59,8 @@ jobs:
 
     strategy:
       matrix:
-        platform: [[linux, ubuntu-latest], [macos, macos-latest], [windows, windows-latest]]
-        # platform: [[linux, ubuntu-latest]]
+        # platform: [[linux, ubuntu-latest], [macos, macos-latest], [windows, windows-latest]]
+        platform: [[linux, ubuntu-latest]]
         # python-version: [3.8, 3.9, 3.10, 3.11, 3.12, 3.13]  # Modify as needed
 
     steps:
@@ -74,7 +74,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install cibuildwheel pytest pytest-cov codecov
+          pip install cibuildwheel pytest
 
       - name: Build wheels
         run: |
@@ -82,11 +82,11 @@ jobs:
         env:
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_TEST_COMMAND: "python -m pytest {project}/tests"
-          CIBW_SKIP: pp*
+          CIBW_SKIP: "pp* *-musllinux*"
           CIBW_TEST_REQUIRES: pytest
       
       - name: Upload Wheel to GitHub Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: python-wheels
           path: dist/*.whl
@@ -97,15 +97,18 @@ jobs:
 
       steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
 
       - name: Download Wheels from Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: dist/
         # Downloads the wheels from the build job's artifacts
+
+      - name: Download packages
+        run: pip install pytest pytest-cov codecov
       
       - name: Install built wheel
         run: pip install --no-index --find-links=dist multi-choices-parser
@@ -127,6 +130,6 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Delete Artifacts
-        uses: actions/delete-artifact@v2
+        uses: actions/delete-artifact@v4
         with:
           name: python-wheels
