@@ -90,6 +90,7 @@ jobs:
         with:
           name: python-wheels
           path: dist/*.whl
+          retention-days: 1
 
   publish:
       runs-on: ubuntu-latest
@@ -128,8 +129,3 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-
-      - name: Delete Artifacts
-        uses: actions/delete-artifact@v4
-        with:
-          name: python-wheels
