@@ -3,7 +3,7 @@
 #include <memory>
 #include "parser.h" // Include your parser implementation header
 
-void test_accepts(ParserNode* tree, const std::vector<std::vector<int>>& test_sequences) {
+void test_accepts(std::shared_ptr<ParserNode> tree, const std::vector<std::vector<int>>& test_sequences) {
     ParserState state;
     state.nodes.push_back(tree);
     std::cout << "\nTesting sequences:\n";
@@ -15,7 +15,7 @@ void test_accepts(ParserNode* tree, const std::vector<std::vector<int>>& test_se
     }
 }
 
-void test_step(ParserNode* tree, const std::vector<int>& sequence) {
+void test_step(std::shared_ptr<ParserNode> tree, const std::vector<int>& sequence) {
     std::cout << "\nTesting single-step traversal:\n";
     ParserState state;
     state.nodes.push_back(tree);

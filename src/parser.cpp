@@ -34,15 +34,20 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
 
 // Function to add a sequence to a tree
 // Returns the end node pointer if exists else null pointer
-ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, ParserNode* final_node, bool add_end_symb) {
+std::shared_ptr<ParserNode> add_sequence(
+    std::shared_ptr<ParserNode> root, 
+    const std::vector<int>& sequence, 
+    std::shared_ptr<ParserNode> final_node, 
+    bool add_end_symb) 
+{
     auto current_node = root;
 
     for (size_t i = 0; i < sequence.size(); i++) {
         auto character = sequence[i];
 
-        ParserNode* new_node;
+        std::shared_ptr<ParserNode> new_node;
         if (i < sequence.size()-1){
-            new_node = new ParserNode();
+            new_node = std::make_shared<ParserNode>();
         }
         else{
             new_node = final_node;
@@ -58,9 +63,6 @@ ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, Par
         else{
             current_node = it->next;
         }
-        
-        
-
     }
     if (add_end_symb){
         Transition to_add = {END, nullptr};
@@ -71,9 +73,13 @@ ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, Par
 }
 
 // Function to build a tree for a single group
-std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node, bool add_end_symbol) {
+std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
+    const std::vector<std::vector<int>>& group, 
+    std::shared_ptr<ParserNode> final_node, 
+    bool add_end_symbol
+) {
     bool is_nullable = false;
-    ParserNode* root = new ParserNode();
+    auto root = std::make_shared<ParserNode>();
     
     for (size_t i = 0; i<group.size(); i++) {
         const auto& sequence = group[i];
@@ -89,12 +95,12 @@ std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int
 
 // Function to connect multiple group trees with epsilon transitions
 void connect_trees(
-    std::vector<std::tuple<ParserNode*, bool>>& group_trees,
-    std::vector<ParserNode*>& final_nodes
+    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees,
+    std::vector<std::shared_ptr<ParserNode>>& final_nodes
 ) {
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
-        ParserNode* group_tree = std::get<0>(group_trees[i]);
+        auto group_tree = std::get<0>(group_trees[i]);
         auto is_nullable = std::get<1>(group_trees[i]);
         auto next_group_tree = std::get<0>(group_trees[i+1]);
         if (next_group_tree != nullptr){
@@ -110,13 +116,13 @@ void connect_trees(
 }
 
 // Function to construct the final tree
-ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
-    std::vector<std::tuple<ParserNode*, bool>> group_trees;
+std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
+    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>> group_trees;
     // Build a tree for each group
-    std::vector<ParserNode*> final_nodes;    
+    std::vector<std::shared_ptr<ParserNode>> final_nodes;    
     for (size_t i = 0; i < groups.size(); i++)
     {
-        final_nodes.push_back(new ParserNode());
+        final_nodes.push_back(std::make_shared<ParserNode>());
 
         group_trees.push_back(build_group_tree(groups[i], final_nodes[i], i == groups.size()-1));
     }
@@ -128,9 +134,8 @@ ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& gro
 }
 
 int min(int a, int b){
-    return a<b ? a:b;
+    return a < b ? a : b;
 }
-
 
 void unwrap(const std::vector<Transition>& transitions, std::vector<const std::vector<Transition>*>& result) {
     result.push_back(&transitions);
@@ -166,10 +171,9 @@ bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end
     ParserState current_state = state;
     for (int character : sequence) {
         ParserState next_state;
-        for (ParserNode* node : current_state.nodes)
+        for (auto& node : current_state.nodes)
         {      
             // Unwrap epsilon transitions
-            // unwrap should return an iterator of std::vector<Transition>
             if (node == nullptr){
                 continue;
             }
@@ -200,11 +204,9 @@ bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end
     return true;
 }
 
-
 ParserState step(const ParserState& state, int character) {
-    // Unwrap epsilon transitions
     ParserState new_state;
-    for (ParserNode* node: state.nodes)
+    for (auto& node : state.nodes)
     {
         std::vector<const std::vector<Transition>*> all_valid_transition_vectors = {};
         unwrap(node->transitions, all_valid_transition_vectors);
@@ -221,7 +223,7 @@ ParserState step(const ParserState& state, int character) {
 
 std::vector<int> next(const ParserState& state) {
     std::vector<int> possible_characters;
-    for (ParserNode* node : state.nodes) {
+    for (auto& node : state.nodes) {
         if (node == nullptr) {
             continue; // Skip null nodes
         }

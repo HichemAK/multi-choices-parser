@@ -26,17 +26,16 @@ PYBIND11_MODULE(_core, m) {
         .def("__lt__", &Transition::operator<); // Expose comparison operator
 
     // Expose ParserNode
-    py::class_<ParserNode>(m, "ParserNode")
+    py::class_<ParserNode, std::shared_ptr<ParserNode>>(m, "ParserNode")
         .def(py::init<>()) // Default constructor
         .def_readwrite("transitions", &ParserNode::transitions)
-        .def("delete_recursive", &ParserNode::delete_recursive, "Free memory for all reachable nodes, recursively");
+        .def("add_transition", &ParserNode::add_transition, "Add a transition to another node");
 
     // Expose ParserState
     py::class_<ParserState>(m, "ParserState")
         .def(py::init<>()) // Default constructor
         .def_readwrite("nodes", &ParserState::nodes)
         .def("add_node", &ParserState::add_node, "Add a node to the state")
-        .def("free_memory", &ParserState::free_memory, "Free memory for all nodes in the state, recursively");
 
     // Expose build_group_tree function
     m.def("build_group_tree", &build_group_tree, R"pbdoc(
