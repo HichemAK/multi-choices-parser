@@ -1,7 +1,7 @@
 import os.path as osp
 import itertools
 import json
-from typing import Iterator
+from typing import Iterator, List, Tuple, Union
 
 from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
@@ -44,7 +44,7 @@ def integer_grammars():
             int_grammar.append(nl)
         yield int_grammar, None
 
-def grammars() -> Iterator[list[list[str]]]:
+def grammars() -> Iterator[List[List[str]]]:
     yield from appleorange_grammars()
     yield [[' '],
     ['France', 'Paris', 'Madrid', 'Montréal', 'Berlin'],
@@ -55,7 +55,7 @@ def grammars() -> Iterator[list[list[str]]]:
     ['.']], None
 
 
-def all_grammars() -> Iterator[list[list[str]]]:
+def all_grammars() -> Iterator[List[List[str]]]:
     yield from grammars()
     yield from integer_grammars()
     yield from alphabet_constrained_grammars()
@@ -127,7 +127,7 @@ def adapt_grammar_to_parser(grammar, parser_class):
             grammar = [[[x[0] for x in choice] for choice in choices] for choices in grammar]
     return grammar
 
-def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> tuple[list, bool]:
+def split_according_to_alphabet(text : Union[str, List[int]], alphabet : Union[str, Tuple[Union[str, Tuple[int]]]]) -> Tuple[list, bool]:
     if alphabet is None:
         return text, True
     res = []
@@ -273,14 +273,17 @@ def test_stress(parser_class):
     possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
     possible_groups = list(itertools.combinations(possible_choices, 2))
     possible_grammars = itertools.product(*([possible_groups]*N_LIST))
-
+    all_strings = list(''.join(x).replace('_', '') for x in itertools.product(*['ab_']*N_LIST))
     for grammar in possible_grammars:
-        to_parse_correct = [
-            itertools.chain(*x) for x in itertools.product(*grammar)
-        ]
+        to_parse_correct = set(
+            "".join(itertools.chain(*x)) for x in itertools.product(*grammar)
+        )
         parser = parser_class(grammar)
         for p in to_parse_correct:
             correct_test(p, parser)
+        for p in all_strings:
+            if p not in to_parse_correct:
+                incorrect_test(p, parser)
 
 # def test_memory_leak():
 #     import psutil

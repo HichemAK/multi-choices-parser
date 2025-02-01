@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Hichem Ammar Khodja", email = "hichem5696@gmail.com" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.7"
 dependencies = [
 ]
 
@@ -26,7 +26,7 @@ build-backend = "scikit_build_core.build"
 
 [dependency-groups]
 dev = [
-    "ipykernel>=6.29.5",
-    "numpy>=2.2.2",
-    "pytest>=7.4.4",
+    "ipykernel",
+    "numpy",
+    "pytest",
 ]
