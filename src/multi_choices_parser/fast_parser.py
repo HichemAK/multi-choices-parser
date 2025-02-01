@@ -171,3 +171,6 @@ class FastMultiChoicesParser:
             int: The hash value.
         """
         return hash((id(self.root), self.current_state))
+    
+    def free(self):
+        self.root.free_memory()
