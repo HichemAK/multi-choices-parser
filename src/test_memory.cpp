@@ -1,3 +1,7 @@
+// IMPORTANT: This should be run using Valgrind and check for low memory leaks
+
+
+
 #include <iostream>
 #include <vector>
 #include <string>
