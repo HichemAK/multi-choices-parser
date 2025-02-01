@@ -26,11 +26,19 @@ jobs:
       - name: Check if version has changed
         id: version_check
         run: |
-          # Fetch previous commit history
+          # Fetch the previous commit history
           git fetch --depth=2
 
+          # Get the latest commit hash (HEAD) and the second-to-latest commit hash
+          PREVIOUS_COMMIT=$(git rev-parse HEAD^)
+          
+          # If HEAD^ is not valid, use merge-base to get the common ancestor commit
+          if [ $? -ne 0 ]; then
+            PREVIOUS_COMMIT=$(git merge-base HEAD HEAD~1)
+          fi
+
           # Check if pyproject.toml has changed and if the version field has changed
-          VERSION_CHANGED=$(git diff --name-only HEAD^ HEAD | grep -E '^pyproject.toml$' && git diff -U0 HEAD^ HEAD pyproject.toml | grep -E '^\+version =')
+          VERSION_CHANGED=$(git diff --name-only $PREVIOUS_COMMIT HEAD | grep -E '^pyproject.toml$' && git diff -U0 $PREVIOUS_COMMIT HEAD pyproject.toml | grep -E '^\+version =')
           
           if [ -z "$VERSION_CHANGED" ]; then
             echo "Version not changed. Skipping build."
@@ -40,6 +48,7 @@ jobs:
             echo "Version has changed."
             echo "::set-output name=version_changed::true"
           fi
+
 
 
   build_and_test:
