@@ -33,7 +33,7 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
 };
 
 // Function to add a sequence to a tree
-// Returns the last node before end_symbol if it exists
+// Returns the end node pointer if exists else null pointer
 ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, ParserNode* final_node, bool add_end_symb) {
     auto current_node = root;
 
@@ -49,13 +49,25 @@ ParserNode* add_sequence(ParserNode* root, const std::vector<int>& sequence, Par
         }
         Transition to_add = {character, new_node};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
-        current_node = it->next;
+        
+        if(new_node == final_node && it->next != final_node){
+            Transition to_add = {SpecialSymb::EPS, final_node};
+            insertIntoOrderedVector(it->next->transitions, to_add, comp_characters);
+            current_node = final_node;
+        }
+        else{
+            current_node = it->next;
+        }
+        
+        
+
     }
     if (add_end_symb){
         Transition to_add = {END, nullptr};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
+        return it->next;
     }
-    return current_node;
+    return nullptr;
 }
 
 // Function to build a tree for a single group
@@ -83,18 +95,15 @@ void connect_trees(
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
         ParserNode* group_tree = std::get<0>(group_trees[i]);
-        Transition to_add = Transition{EPS, std::get<0>(group_trees[i+1])};
-        insertIntoOrderedVector(final_nodes[i]->transitions, to_add, comp_characters);
-        for (size_t j = i; j < n && std::get<1>(group_trees[j]); j++){
-            ParserNode* arrival_node;
-            // Link root of each group with nullable sequence
-            if (j < n-1){
-                arrival_node = std::get<0>(group_trees[j+1]);
-            }
-            else{
-                arrival_node = final_nodes.back();
-            }
-            Transition to_add = Transition{EPS, arrival_node};
+        auto is_nullable = std::get<1>(group_trees[i]);
+        auto next_group_tree = std::get<0>(group_trees[i+1]);
+        if (next_group_tree != nullptr){
+            Transition to_add = Transition{EPS, next_group_tree}; 
+            insertIntoOrderedVector(final_nodes[i]->transitions, to_add, comp_characters);
+        }
+        
+        if (is_nullable){
+            Transition to_add = Transition{next_group_tree != nullptr ? EPS : END, next_group_tree};
             insertIntoOrderedVector(group_tree->transitions, to_add, comp_characters);
         }
     }
@@ -113,6 +122,7 @@ ParserNode* construct_tree(const std::vector<std::vector<std::vector<int>>>& gro
     }
 
     // Connect the group trees with epsilon transitions
+    group_trees.push_back({nullptr, false});
     connect_trees(group_trees, final_nodes);
     return std::get<0>(group_trees[0]);
 }
@@ -207,4 +217,31 @@ ParserState step(const ParserState& state, int character) {
         }
     }
     return new_state; // Return nullptr if no valid transition is found
+}
+
+std::vector<int> next(const ParserState& state) {
+    std::vector<int> possible_characters;
+    for (ParserNode* node : state.nodes) {
+        if (node == nullptr) {
+            continue; // Skip null nodes
+        }
+
+        // Unwrap epsilon transitions
+        std::vector<const std::vector<Transition>*> all_valid_transition_vectors = {};
+        unwrap(node->transitions, all_valid_transition_vectors);
+
+        // Collect all unique characters from the transitions
+        for (const auto& transitions : all_valid_transition_vectors) {
+            for (const auto& transition : *transitions) {
+                if (transition.character != SpecialSymb::EPS) { // Skip epsilon transitions
+                    // Avoid duplicates
+                    if (std::find(possible_characters.begin(), possible_characters.end(), transition.character) == possible_characters.end()) {
+                        possible_characters.push_back(transition.character);
+                    }
+                }
+            }
+        }
+    }
+
+    return possible_characters;
 }

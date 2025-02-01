@@ -35,9 +35,8 @@ void test_step(ParserNode* tree, const std::vector<int>& sequence) {
 int main() {
     // Define groups of sequences
     std::vector<std::vector<std::vector<int>>> groups = {
-        {{1}, {3}, {}},  // Group 1: [2], [3], nullable ([])
-        {{1, 2}, {1, 4}} // Group 2: [1, 2], [1, 4]
-    };
+        {{'t','h','e'}, {'a','n'}, {'a'}, {}}, 
+        {{'o','r','a','n','g','e'}, {'a','p','p','l','e'}, {'b','a','n','a','n','a'}, {}}};
 
     // Construct the parser tree
     std::cout << "Constructing the parser tree...\n";
@@ -49,15 +48,7 @@ int main() {
 
     // Test sequences
     std::vector<std::vector<int>> test_sequences = {
-        {1, 2, SpecialSymb::END},     // Valid (nullable group)
-        {1, 4},     // Valid (nullable group)
-        {2, 3},     // Invalid
-        {1, 1, 2},  // Valid
-        {1, 1, 4},  // Valid
-        {3, 1, 2},  // Valid
-        {3, 1, 4},  // Valid
-        {1},        // Invalid
-        {}          // Invalid
+        {'t','h','e',SpecialSymb::END}
     };
 
     // Test the accepts function

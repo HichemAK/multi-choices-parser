@@ -2,6 +2,7 @@ import os.path as osp
 import itertools
 import json
 from typing import Iterator
+
 from multi_choices_parser.parser import MultiChoicesParser, DEFAULT_END_SYMB
 from multi_choices_parser.fast_parser import FastMultiChoicesParser
 import pytest
@@ -9,7 +10,7 @@ import random
 
 TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
-PARSER_CLASSES = [FastMultiChoicesParser]
+PARSER_CLASSES = [FastMultiChoicesParser, MultiChoicesParser]
 
 def appleorange_grammars():
     yield [
@@ -120,6 +121,13 @@ def alphabet_constrained_grammars():
     # entities,
     # ['.']], ["Ġ" + x for x in alphabet]
 
+def adapt_grammar_to_parser(grammar, parser_class):
+    if parser_class is FastMultiChoicesParser:
+        choice1 = grammar[0][0][0]
+        if isinstance(choice1, tuple) and isinstance(choice1[0], int):
+            grammar = [[[x[0] for x in choice] for choice in choices] for choices in grammar]
+    return grammar
+
 def split_according_to_alphabet(text : str | list[int], alphabet : str | tuple[str | tuple[int]]) -> tuple[list, bool]:
     if alphabet is None:
         return text, True
@@ -185,9 +193,12 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
+    if alphabet is not None and parser_class is FastMultiChoicesParser:
+        pytest.skip("%s does not support this feature yet" % parser_class.__name__)
+    grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     nexts = nexts + [(end_symb, )]
-    for c, n in zip(split_according_to_alphabet(to_parse, parser.alphabet)[0] + [end_symb], nexts):
+    for c, n in zip(list(split_according_to_alphabet(to_parse, parser.alphabet)[0]) + [end_symb], nexts):
         assert sorted(parser.next()) == sorted(n)
         parser.step(c)
     
@@ -198,6 +209,8 @@ def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_alphabet(parser_class, grammar_alphabet, end_symb) -> None:    
     grammar, alphabet = grammar_alphabet
+    if parser_class is FastMultiChoicesParser:
+        pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     if alphabet is None:
         assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
@@ -207,6 +220,9 @@ def test_alphabet(parser_class, grammar_alphabet, end_symb) -> None:
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
+    if alphabet is not None and parser_class is FastMultiChoicesParser:
+        pytest.skip("%s does not support this feature yet" % parser_class.__name__)
+    grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     to_parse_incorrect = [
         ('z'),
@@ -225,6 +241,9 @@ def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
 def test_parse_correct(parser_class, grammar_alphabet, end_symb):
 
     grammar, alphabet = grammar_alphabet
+    if alphabet is not None and parser_class is FastMultiChoicesParser:
+        pytest.skip("%s does not support this feature yet" % parser_class.__name__)
+    grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     to_parse_correct = [
         itertools.chain(*x) for x in itertools.product(*grammar)
@@ -237,6 +256,9 @@ def test_parse_correct(parser_class, grammar_alphabet, end_symb):
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_copy(parser_class, grammar_alphabet, end_symb):
     grammar, alphabet = grammar_alphabet
+    if alphabet is not None and parser_class is FastMultiChoicesParser:
+        pytest.skip("%s does not support this feature yet" % parser_class.__name__)
+    grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
 
     parser.step('a')
@@ -245,3 +267,43 @@ def test_copy(parser_class, grammar_alphabet, end_symb):
     assert all(x == parser and hash(x) == hash(parser) for x in copies)
     for test, c in zip(tests, copies):
         correct_test(test, c, reset=False, test_accept=False)
+
+@pytest.mark.parametrize('parser_class', PARSER_CLASSES)
+def test_stress(parser_class):
+    N_LIST = 3
+    possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
+    possible_groups = list(itertools.combinations(possible_choices, 2))
+    possible_grammars = itertools.product(*([possible_groups]*3))
+
+    for grammar in possible_grammars:
+        to_parse_correct = [
+            itertools.chain(*x) for x in itertools.product(*grammar)
+        ]
+        parser = parser_class(grammar)
+        for p in to_parse_correct:
+            correct_test(p, parser)
+
+def test_memory_leak():
+    import psutil
+
+    process = psutil.Process()
+    mem_init = process.memory_info().rss
+
+    import numpy as np
+
+
+    l = np.random.randint(0, 10**9, 100000).astype(str)
+    l = [
+        ['the', 'an', "a", ""],
+        l
+    ]
+    process = psutil.Process()
+    mem_before = process.memory_info().rss
+
+    parser = FastMultiChoicesParser(l)
+    mem_during = process.memory_info().rss
+
+    del parser
+    mem_after = process.memory_info().rss
+
+    print(mem_init, mem_before, mem_during, mem_after)

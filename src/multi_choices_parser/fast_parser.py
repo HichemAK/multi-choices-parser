@@ -82,12 +82,11 @@ class FastMultiChoicesParser:
         Returns:
             tuple: A tuple of characters (if in string mode) or integers, or the End symbol.
         """
-        # Collect all possible transitions from the current state
-        transitions = set(transition.character for node in self.current_state.nodes for transition in node.transitions)
+        next_chars = _core.next(self.current_state)
         if self.string_mode:
             # Convert integers to characters if in string mode
-            return set(chr(ch) if ch is not self.end_symb else ch for ch in transitions)
-        return transitions
+            next_chars = [chr(c) if c != _core.SpecialSymb.END else self.end_symb for c in next_chars]
+        return next_chars
 
     def step(self, ch: Union[int, str]) -> None:
         """
@@ -149,9 +148,9 @@ class FastMultiChoicesParser:
         Returns:
             bool: True if the string is accepted, False otherwise.
         """
-        # Convert string to tuple of integers if necessary
-        if self.string_mode:
-            string = tuple(ord(ch) if ch is not self.end_symb else _core.SpecialSymb.END for ch in string)
+        # Convert string to tuple of integers when necessary
+        f = lambda c : _core.SpecialSymb.END if c is self.end_symb else ord(c) if isinstance(c,str) else c
+        string = tuple(f(ch) for ch in string)
 
         return _core.accepts(self.current_state, string, must_end, True)
 
@@ -182,4 +181,4 @@ class FastMultiChoicesParser:
         return hash((id(self.root), id(self.current_state)))
     
     def free(self):
-        self.root.free_memory()
+        self.root.delete_recursive()
