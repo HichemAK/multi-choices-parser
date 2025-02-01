@@ -1,6 +1,6 @@
 [project]
 name = "multi-choices-parser"
-version = "0.9.71"
+version = "0.9.70"
 description = "An efficient C++ incremental parser for multi-choices grammars with Python bindings."
 readme = "README.md"
 authors = [
