@@ -59,7 +59,7 @@ struct ParserState {
 };
 
 // Function to construct a tree for a single group of sequences
-std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node);
+std::tuple<ParserNode*, bool> build_group_tree(const std::vector<std::vector<int>>& group, ParserNode* final_node, bool add_end_symbol);
 
 // Function to connect multiple group trees with epsilon transitions
 void connect_trees(
