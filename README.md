@@ -24,8 +24,10 @@ pip install multi-choices-parser
 ```
 
 ## Features
-- Handles large lists of choices efficiently (e.g. millions of choices).
-- Incremental parsing.
+- Handle large lists of choices efficiently (e.g. millions of choices).
+- Incremental parsing: Each node and its transitions can be accessed at any moment of the parsing.
+- Extensive testing
+- Supports all Python versions >=3.8
 
 ## Usage
 To use the `MultiChoicesParser`, follow these steps:
