@@ -52,7 +52,7 @@ l = [
 p = MultiChoicesParser(l)
 
 # Parse a string (don't forget to add the End symbol)
-for i, c in enumerate(tuple("apple") + (DEFAULT_END_SYMB, )):
+for i, c in enumerate(tuple("anapple") + (DEFAULT_END_SYMB, )):
     print('Step %s' % i)
     print("Authorized characters:", sorted(p.next()))
     print('Adding character:', c)
