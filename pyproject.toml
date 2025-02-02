@@ -1,26 +1,21 @@
 [project]
 name = "multi-choices-parser"
 version = "0.9.71"
-description = "An efficient C++ incremental parser for multi-choices grammars with Python bindings."
+description = "An efficient C++ incremental parser for multi-choices grammars (generalization of the trie structure) with Python bindings."
 readme = "README.md"
 authors = [
     { name = "Hichem Ammar Khodja", email = "hichem5696@gmail.com" }
 ]
 requires-python = ">=3.8"
-dependencies = [
-]
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/HichemAK/multi-choices-parser"
-
-[project.scripts]
-multi-choices-parser = "multi_choices_parser:main"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 sdist.exclude = [".github", "tests", "examples", ".gitignore", ".python-version"]
-
 
 [build-system]
 requires = ["scikit-build-core>=0.10", "pybind11"]
@@ -28,8 +23,5 @@ build-backend = "scikit_build_core.build"
 
 [dependency-groups]
 dev = [
-    "cibuildwheel>=2.13.1",
-    "ipykernel",
-    "numpy",
-    "pytest",
+    "pytest"
 ]
