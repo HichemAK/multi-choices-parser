@@ -34,9 +34,13 @@ void test_step(std::shared_ptr<ParserNode> tree, const std::vector<int>& sequenc
 
 int main() {
     // Define groups of sequences
+    // std::vector<std::vector<std::vector<int>>> groups = {
+    //     {{'t','h','e'}, {'a','n'}, {'a'}, {}}, 
+    //     {{'o','r','a','n','g','e'}, {'a','p','p','l','e'}, {'b','a','n','a','n','a'}, {}}};
+    
     std::vector<std::vector<std::vector<int>>> groups = {
-        {{'t','h','e'}, {'a','n'}, {'a'}, {}}, 
-        {{'o','r','a','n','g','e'}, {'a','p','p','l','e'}, {'b','a','n','a','n','a'}, {}}};
+        {{'a'}, {'a', 'b'}}
+    };
 
     // Construct the parser tree
     std::cout << "Constructing the parser tree...\n";

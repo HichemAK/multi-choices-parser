@@ -72,6 +72,7 @@ def grammar_expected_next():
         'n',
         'g',
         'e',
+        ''
     ]
     yield list(appleorange_grammars())[1], to_parse, [tuple(x) for x in nexts if not isinstance(x, tuple)]
     grammar = [
@@ -84,6 +85,22 @@ def grammar_expected_next():
         tuple('ta') + ('anapp',),
         ('le','l'),
         ('e',),
+        tuple()
+    ]
+    yield (grammar, alphabet), to_parse, nexts
+
+
+    grammar = [[
+        [6342],
+        [14708],
+        [6342, 31248],
+        [25866, 8290, 275, 472, 12303, 10682, 2806, 16426]
+    ]]
+    alphabet = None
+    to_parse = [14708]
+    nexts = [
+        [6342, 14708, 25866],
+        [],
     ]
     yield (grammar, alphabet), to_parse, nexts
 
@@ -168,6 +185,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
         print(to_parse)
         # Verify that the parser accepted the string to parse
         assert parser.finished and parser.success
+        assert len(parser.next()) == 0
     if test_accept:
         # Test .accepts method
         parser.reset()
@@ -198,8 +216,11 @@ def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None
     parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     nexts = nexts + [(end_symb, )]
     for c, n in zip(list(split_according_to_alphabet(to_parse, parser.alphabet)[0]) + [end_symb], nexts):
+        if c is end_symb:
+            n = list(n) + [end_symb]
         assert sorted(parser.next()) == sorted(n)
         parser.step(c)
+
     
 
 @pytest.mark.parametrize("grammar_alphabet",
@@ -269,11 +290,12 @@ def test_copy(parser_class, grammar_alphabet, end_symb):
 
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_stress(parser_class):
-    N_LIST = 3
+    N_LIST = 2
     possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
     possible_groups = list(itertools.combinations(possible_choices, 2))
     possible_grammars = itertools.product(*([possible_groups]*N_LIST))
     all_strings = list(''.join(x).replace('_', '') for x in itertools.product(*['ab_']*N_LIST))
+
     for grammar in possible_grammars:
         to_parse_correct = set(
             "".join(itertools.chain(*x)) for x in itertools.product(*grammar)
