@@ -39,7 +39,7 @@ int main() {
     //     {{'o','r','a','n','g','e'}, {'a','p','p','l','e'}, {'b','a','n','a','n','a'}, {}}};
     
     std::vector<std::vector<std::vector<int>>> groups = {
-        {{'a'}, {'a', 'b'}}
+        {{'a'}, {'a', 'b'}}, {{'c'}}
     };
 
     // Construct the parser tree
@@ -52,7 +52,7 @@ int main() {
 
     // Test sequences
     std::vector<std::vector<int>> test_sequences = {
-        {'t','h','e',SpecialSymb::END}
+        {'a','c',SpecialSymb::END}
     };
 
     // Test the accepts function

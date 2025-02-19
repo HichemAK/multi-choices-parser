@@ -36,46 +36,58 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
 std::shared_ptr<ParserNode> add_sequence(
     std::shared_ptr<ParserNode> root, 
     const std::vector<int>& sequence, 
-    std::shared_ptr<ParserNode> final_node, 
-    bool add_end_symb) 
+    std::vector<std::shared_ptr<ParserNode>>& final_nodes) 
 {
     auto current_node = root;
 
     for (size_t i = 0; i < sequence.size(); i++) {
         auto character = sequence[i];
-
-        std::shared_ptr<ParserNode> new_node;
-        if (i < sequence.size()-1){
-            new_node = std::make_shared<ParserNode>();
-        }
-        else{
-            new_node = final_node;
-        }
-        Transition to_add = {character, new_node};
-        auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
         
-        if(new_node == final_node && it->next != final_node){
-            Transition to_add = {SpecialSymb::EPS, final_node};
-            insertIntoOrderedVector(it->next->transitions, to_add, comp_characters);
-            current_node = final_node;
-        }
-        else{
-            current_node = it->next;
-        }
-    }
-    if (add_end_symb){
-        Transition to_add = {END, nullptr};
+
+        Transition to_add = {character, nullptr};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
-        return it->next;
+        if (it->next == nullptr){
+            auto new_node = std::make_shared<ParserNode>();
+            it->next = new_node;
+            if(i == sequence.size()-1){
+                final_nodes.push_back(new_node);
+            }
+        }
+        current_node = it->next;
+        // else{
+        //     // auto next_node_is_final = it->next.get()->transitions.size() && 
+        //     //     it->next.get()->transitions[0].character < END; // Equivalent to next_char is in [END, EPS]
+        //     if (it->next == final_node && i < sequence.size()){
+        //         it->next = std::make_shared<ParserNode>();
+        //     }
+        // }
+        
+        // auto new_node_is_final = false;
+        // if (i == sequence.size()-1){
+        //     final_nodes.push_back(current_node);
+        //     new_node_is_final = true;
+        // }
+        
+        // if(new_node == final_node && it->next != final_node){
+        //     Transition to_add = {SpecialSymb::EPS, final_node};
+        //     insertIntoOrderedVector(it->next->transitions, to_add, comp_characters);
+        //     current_node = final_node;
+        // }
+        // else{
+        //     current_node = it->next;
+        // }
     }
+    // if (add_end_symb){
+    //     Transition to_add = {END, nullptr};
+    //     auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
+    //     return it->next;
+    // }
     return nullptr;
 }
 
 // Function to build a tree for a single group
 std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
-    const std::vector<std::vector<int>>& group, 
-    std::shared_ptr<ParserNode> final_node, 
-    bool add_end_symbol
+    const std::vector<std::vector<int>>& group, std::vector<std::shared_ptr<ParserNode>>& final_nodes
 ) {
     bool is_nullable = false;
     auto root = std::make_shared<ParserNode>();
@@ -85,7 +97,7 @@ std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
         if (sequence.empty()) {
             is_nullable = true; // Mark the group as nullable if it contains an empty sequence
         } else {
-            add_sequence(root, sequence, final_node, add_end_symbol);
+            add_sequence(root, sequence, final_nodes);
         }
     }
 
@@ -93,20 +105,20 @@ std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
 }
 
 // Function to connect multiple group trees with epsilon transitions
-void connect_trees(
-    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees,
-    std::vector<std::shared_ptr<ParserNode>>& final_nodes
-) {
+void connect_trees(const std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees, 
+std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group) {
     int n = group_trees.size();
     for (size_t i = 0; i < n-1; i++){
         auto group_tree = std::get<0>(group_trees[i]);
         auto is_nullable = std::get<1>(group_trees[i]);
+        auto final_nodes = final_nodes_per_group[i];
         auto next_group_tree = std::get<0>(group_trees[i+1]);
-        if (next_group_tree != nullptr){
-            Transition to_add = Transition{EPS, next_group_tree}; 
-            insertIntoOrderedVector(final_nodes[i]->transitions, to_add, comp_characters);
+        auto ch = next_group_tree == nullptr ? END : EPS;
+        for (size_t j = 0; j < final_nodes.size(); j++)
+        {
+            Transition to_add = Transition{ch, next_group_tree}; 
+            insertIntoOrderedVector(final_nodes[j]->transitions, to_add, comp_characters);
         }
-        
         if (is_nullable){
             Transition to_add = Transition{next_group_tree != nullptr ? EPS : END, next_group_tree};
             insertIntoOrderedVector(group_tree->transitions, to_add, comp_characters);
@@ -116,20 +128,20 @@ void connect_trees(
 
 // Function to construct the final tree
 std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
-    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>> group_trees;
+    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>> groups_tree_infos;
     // Build a tree for each group
-    std::vector<std::shared_ptr<ParserNode>> final_nodes;    
+    std::vector<std::vector<std::shared_ptr<ParserNode>>> final_nodes_per_group = {};
     for (size_t i = 0; i < groups.size(); i++)
     {
-        final_nodes.push_back(std::make_shared<ParserNode>());
-
-        group_trees.push_back(build_group_tree(groups[i], final_nodes[i], i == groups.size()-1));
+        std::vector<std::shared_ptr<ParserNode>> final_nodes = {};
+        groups_tree_infos.push_back(build_group_tree(groups[i], final_nodes));
+        final_nodes_per_group.push_back(final_nodes);
     }
 
     // Connect the group trees with epsilon transitions
-    group_trees.push_back({nullptr, false});
-    connect_trees(group_trees, final_nodes);
-    return std::get<0>(group_trees[0]);
+    groups_tree_infos.push_back({nullptr, false});
+    connect_trees(groups_tree_infos, final_nodes_per_group);
+    return std::get<0>(groups_tree_infos[0]);
 }
 
 int min(int a, int b){
