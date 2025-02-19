@@ -1,7 +1,7 @@
 import os.path as osp
 import itertools
 import json
-from typing import Iterator, List, Tuple, Union
+from typing import Iterable, Iterator, List, Tuple, Union
 
 from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
@@ -288,24 +288,40 @@ def test_copy(parser_class, grammar_alphabet, end_symb):
     for test, c in zip(tests, copies):
         correct_test(test, c, reset=False, test_accept=False)
 
+def extract_all_correct_sequences(parser : MultiChoicesParser, buf : list) -> Iterable[str]:
+    result = []
+    n = parser.next()
+    if len(n) == 0:
+        yield ''.join(buf)
+    for c in n:
+        parser_ = parser.copy()
+        parser_.step(c)
+        buf_ = buf.copy()
+        if c is not parser.end_symb:
+            buf_.append(c)
+        yield from extract_all_correct_sequences(parser_, buf_)
+        
+
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_stress(parser_class):
-    N_LIST = 2
+    N_LIST = 3
     possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
     possible_groups = list(itertools.combinations(possible_choices, 2))
     possible_grammars = itertools.product(*([possible_groups]*N_LIST))
     all_strings = list(''.join(x).replace('_', '') for x in itertools.product(*['ab_']*N_LIST))
 
     for grammar in possible_grammars:
-        to_parse_correct = set(
+        to_parse_correct = sorted(set(
             "".join(itertools.chain(*x)) for x in itertools.product(*grammar)
-        )
+        ))
         parser = parser_class(grammar)
         for p in to_parse_correct:
             correct_test(p, parser)
         for p in all_strings:
             if p not in to_parse_correct:
                 incorrect_test(p, parser)
+        all_correct_seq = sorted(extract_all_correct_sequences(parser, []))
+        assert all_correct_seq == to_parse_correct
 
 # def test_memory_leak():
 #     import psutil

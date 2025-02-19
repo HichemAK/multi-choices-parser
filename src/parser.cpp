@@ -47,41 +47,13 @@ std::shared_ptr<ParserNode> add_sequence(
         Transition to_add = {character, nullptr};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
         if (it->next == nullptr){
-            auto new_node = std::make_shared<ParserNode>();
-            it->next = new_node;
-            if(i == sequence.size()-1){
-                final_nodes.push_back(new_node);
-            }
+            it->next = std::make_shared<ParserNode>();
+        }
+        if(i == sequence.size()-1){
+            final_nodes.push_back(it->next);
         }
         current_node = it->next;
-        // else{
-        //     // auto next_node_is_final = it->next.get()->transitions.size() && 
-        //     //     it->next.get()->transitions[0].character < END; // Equivalent to next_char is in [END, EPS]
-        //     if (it->next == final_node && i < sequence.size()){
-        //         it->next = std::make_shared<ParserNode>();
-        //     }
-        // }
-        
-        // auto new_node_is_final = false;
-        // if (i == sequence.size()-1){
-        //     final_nodes.push_back(current_node);
-        //     new_node_is_final = true;
-        // }
-        
-        // if(new_node == final_node && it->next != final_node){
-        //     Transition to_add = {SpecialSymb::EPS, final_node};
-        //     insertIntoOrderedVector(it->next->transitions, to_add, comp_characters);
-        //     current_node = final_node;
-        // }
-        // else{
-        //     current_node = it->next;
-        // }
     }
-    // if (add_end_symb){
-    //     Transition to_add = {END, nullptr};
-    //     auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
-    //     return it->next;
-    // }
     return nullptr;
 }
 
@@ -255,6 +227,5 @@ std::vector<int> next(const ParserState& state) {
             }
         }
     }
-
     return possible_characters;
 }

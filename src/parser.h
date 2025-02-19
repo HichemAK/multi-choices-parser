@@ -38,16 +38,12 @@ struct ParserState {
 
 // Function to construct a tree for a single group of sequences
 std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
-    const std::vector<std::vector<int>>& group, 
-    std::shared_ptr<ParserNode> final_node, 
-    bool add_end_symbol
+    const std::vector<std::vector<int>>& group, std::vector<std::shared_ptr<ParserNode>>& final_nodes
 );
 
 // Function to connect multiple group trees with epsilon transitions
-void connect_trees(
-    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees,
-    std::vector<std::shared_ptr<ParserNode>>& final_nodes
-);
+void connect_trees(const std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees, 
+std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group);
 
 // Function to construct the full parser tree from groups of sequences
 std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
