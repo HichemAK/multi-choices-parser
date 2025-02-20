@@ -93,6 +93,8 @@ class MultiChoicesParser:
         self.success = False
         self.finished = False
 
+        self._is_at_initial_state = True
+
 
     def next(self) -> Tuple[Union[int, str]]:
         """
@@ -126,6 +128,7 @@ class MultiChoicesParser:
         elif self.current_state.nodes[0] is None:
             self.finished = True
             self.success = True
+        self._is_at_initial_state = False
 
     def reset(self) -> None:
         """
@@ -135,6 +138,7 @@ class MultiChoicesParser:
         self.current_state.add_node(self.root)
         self.success = False
         self.finished = False
+        self._is_at_initial_state = True
 
     def copy(self, stateful=True) -> MultiChoicesParser:
         """
@@ -155,6 +159,7 @@ class MultiChoicesParser:
             new_parser.current_state = self.current_state
             new_parser.success = self.success
             new_parser.finished = self.finished
+            new_parser._is_at_initial_state = self._is_at_initial_state
         else:
             new_parser.reset()
         return new_parser
@@ -200,6 +205,10 @@ class MultiChoicesParser:
             int: The hash value.
         """
         return hash((id(self.root), id(self.current_state)))
+    
+    @property
+    def is_at_initial_state(self) -> int:
+        return self._is_at_initial_state
     
     def free(self):
         self.root.delete_recursive()

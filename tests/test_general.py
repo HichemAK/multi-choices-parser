@@ -168,6 +168,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
     random.seed(42112)
     if reset:
         parser.reset()
+        assert parser.is_at_initial_state
     initial_parser = parser.copy()
     to_parse2 = list(to_parse)
     to_parse, success = split_according_to_alphabet(to_parse2, parser.alphabet)
@@ -178,6 +179,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
         # Verify that parser is not finished while the parsing did not end
         assert not parser.finished and not parser.success
         parser.step(c)
+        assert not parser.is_at_initial_state
 
         # Verify that initial parser and post-step parsers are different
         assert initial_parser != parser and hash(initial_parser) != hash(parser)
@@ -185,6 +187,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
         print(to_parse)
         # Verify that the parser accepted the string to parse
         assert parser.finished and parser.success
+        assert not parser.is_at_initial_state
         assert len(parser.next()) == 0
     if test_accept:
         # Test .accepts method
@@ -200,6 +203,7 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     for c in to_parse:
         assert not parser.success
         parser.step(c)
+        assert not parser.is_at_initial_state
     assert not parser.success and parser.finished
     parser.reset()
     assert not parser.accepts(to_parse)

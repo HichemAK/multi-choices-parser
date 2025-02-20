@@ -1,6 +1,6 @@
 [project]
 name = "multi-choices-parser"
-version = "0.9.72"
+version = "0.9.73"
 description = "An efficient C++ incremental parser for multi-choices grammars (generalization of the trie structure) with Python bindings."
 readme = "README.md"
 authors = [
