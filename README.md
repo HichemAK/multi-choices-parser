@@ -41,7 +41,7 @@ To use the `MultiChoicesParser`, follow these steps:
 ### Example
 ```python
 
-from multi_choices_parser.parser import MultiChoicesParser, DEFAULT_END_SYMB
+from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 
 # Define your list of choices
 l = [
