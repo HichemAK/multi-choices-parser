@@ -21,6 +21,9 @@ class End:
 
 DEFAULT_END_SYMB = End()
 
+class ParserError(Exception):
+    pass
+
 class MultiChoicesParser:
     """
     A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
@@ -96,13 +99,15 @@ class MultiChoicesParser:
         self._is_at_initial_state = True
 
 
-    def next(self) -> Tuple[Union[int, str]]:
+    def next(self) -> List[Union[int, str]]:
         """
         Returns all authorized tokens for the current state.
 
         Returns:
             tuple: A tuple of characters (if in string mode) or integers, or the End symbol.
         """
+        if self.finished:
+            return []
         next_chars = _core.next(self.current_state)
         if self.string_mode:
             # Convert integers to characters if in string mode
@@ -118,6 +123,8 @@ class MultiChoicesParser:
         Args:
             ch (Union[int, str]): A character (string) or an integer.
         """
+        if self.finished:
+            raise ParserError("The parser in on 'finished' state!")
         if ch is self.end_symb:
             ch = _core.SpecialSymb.END
         elif isinstance(ch, str):
@@ -174,6 +181,8 @@ class MultiChoicesParser:
         Returns:
             bool: True if the string is accepted, False otherwise.
         """
+        if self.finished:
+            return len(string) == 0
         # Convert string to tuple of integers when necessary
         f = lambda c : _core.SpecialSymb.END if c is self.end_symb else ord(c) if isinstance(c,str) else c
         string = tuple(f(ch) for ch in string)

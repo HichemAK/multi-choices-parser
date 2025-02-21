@@ -7,6 +7,8 @@ from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
 import random
 
+from multi_choices_parser.parser import ParserError
+
 TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
 PARSER_CLASSES = [MultiChoicesParser]
@@ -202,7 +204,10 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     to_parse = tuple(to_parse) + (parser.end_symb, )
     for c in to_parse:
         assert not parser.success
-        parser.step(c)
+        try:
+            parser.step(c)
+        except ParserError:
+            break
         assert not parser.is_at_initial_state
     assert not parser.success and parser.finished
     parser.reset()

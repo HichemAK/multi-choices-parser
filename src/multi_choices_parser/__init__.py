@@ -1,1 +1,1 @@
-from .parser import MultiChoicesParser, DEFAULT_END_SYMB
+from .parser import MultiChoicesParser, DEFAULT_END_SYMB, ParserError
