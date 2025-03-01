@@ -109,7 +109,12 @@ State: Finished=True, Success=True
 </details>
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GNU GPL v2 License - see the LICENSE.txt file for details.
 
 ## Contact
 For any queries or bug reports, please open an issue on the GitHub repository ;)
+
+## Credit
+This code was originally imported from this [Orange GitHub Repository](https://github.com/Orange-OpenSource/DistFactAssessLM/tree/94c7c8cd8f844d6e2efc045be699a2dded533150/multi-choices-parser).
+
+The main contributions of this repository was the introduction of the C++ implementation of the parser (the original implementation was in pure Python), and the improvement of the unit test suite.
