@@ -118,3 +118,31 @@ For any queries or bug reports, please open an issue on the GitHub repository ;)
 This code was originally imported from this [Orange GitHub Repository](https://github.com/Orange-OpenSource/DistFactAssessLM/tree/94c7c8cd8f844d6e2efc045be699a2dded533150/multi-choices-parser).
 
 The main contributions of this repository was the introduction of the C++ implementation of the parser (the original implementation was in pure Python), and the improvement of the unit test suite.
+
+## How to cite?
+
+```
+@inproceedings{ammar-khodja-etal-2025-factual,
+    title = "Factual Knowledge Assessment of Language Models Using Distractors",
+    author = "Ammar Khodja, Hichem  and
+      Ait gueni ssaid, Abderrahmane  and
+      Bechet, Frederic  and
+      Brabant, Quentin  and
+      Nasr, Alexis  and
+      Lecorv{\'e}, Gw{\'e}nol{\'e}",
+    editor = "Rambow, Owen  and
+      Wanner, Leo  and
+      Apidianaki, Marianna  and
+      Al-Khalifa, Hend  and
+      Eugenio, Barbara Di  and
+      Schockaert, Steven",
+    booktitle = "Proceedings of the 31st International Conference on Computational Linguistics",
+    month = jan,
+    year = "2025",
+    address = "Abu Dhabi, UAE",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.coling-main.537/",
+    pages = "8043--8056",
+    abstract = "Language models encode extensive factual knowledge within their parameters. The accurate assessment of this knowledge is crucial for understanding and improving these models. In the literature, factual knowledge assessment often relies on cloze sentences, which can lead to erroneous conclusions due to the complexity of natural language (out-of-subject continuations, the existence of many correct answers and the several ways of expressing them). In this paper, we introduce a new interpretable knowledge assessment method that mitigates these issues by leveraging distractors{---}incorrect but plausible alternatives to the correct answer. We propose several strategies for retrieving distractors and determine the most effective one through experimentation. Our method is evaluated against existing approaches, demonstrating solid alignment with human judgment and stronger robustness to verbalization artifacts. The code and data to reproduce our experiments are available on GitHub."
+}
+```
