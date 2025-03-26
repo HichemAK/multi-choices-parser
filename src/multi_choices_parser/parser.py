@@ -228,5 +228,42 @@ class MultiChoicesParser:
     def is_at_initial_state(self) -> int:
         return self._is_at_initial_state
     
-    def free(self):
-        self.root.delete_recursive()
+    @staticmethod
+    def prepare_string(string : Union[Tuple[int], str], add_end : bool, special_symb_allowed: bool) -> Tuple[int]:
+        if isinstance(string, str):
+            string = tuple(ord(ch) for ch in string)
+        elif not special_symb_allowed:
+            assert _core.SpecialSymb.END not in string and _core.SpecialSymb.EPS not in string, "No special symbols are aloowed in string"
+        
+        if add_end:
+            string = string + (_core.SpecialSymb.END.value,)
+        return string
+    
+    # def delete_sequence(self, string: Union[Tuple[int], str]) -> bool:
+    #     """Delete a sequence from the parsing tree. 
+
+    #     IMPORTANT: The end symbol should not be included.
+
+    #     Args:
+    #         string (Union[Tuple[int], str]): String to delete
+
+    #     Returns:
+    #         bool: If something was deleted.
+    #     """
+    #     string = MultiChoicesParser.prepare_string(string, add_end=True, special_symb_allowed=False)
+    #     return _core.delete_sequence(self.root, string)
+
+        
+    def add_sequence(self, string: Union[Tuple[int], str]) -> bool:
+        """Add a sequence to the parsing tree. 
+
+        IMPORTANT: The end symbol should not be included.
+
+        Args:
+            string (Union[Tuple[int], str]): String to add
+
+        Returns:
+            bool: If something was added.
+        """
+        string = MultiChoicesParser.prepare_string(string, add_end=True, special_symb_allowed=False)
+        return _core.add_sequence(self.root, string, [], False)

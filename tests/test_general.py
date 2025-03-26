@@ -1,7 +1,15 @@
+# Software Name : multi-choices-parser
+# SPDX-FileCopyrightText: Copyright (c) 2025 Orange SA
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# This software is distributed under the GNU General Public License v2.0 or later,
+# see the "LICENSE.txt" file for more details or GNU General Public License v2.0 or later
+
+# Authors: Hichem Ammar Khodja
 import os.path as osp
 import itertools
 import json
-from typing import Iterable, Iterator, List, Tuple, Union
+from typing import Iterable, Iterator, List, Set, Tuple, Union
 
 from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
 import pytest
@@ -187,7 +195,6 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
         assert initial_parser != parser and hash(initial_parser) != hash(parser)
     else:
         print(to_parse)
-        # Verify that the parser accepted the string to parse
         assert parser.finished and parser.success
         assert not parser.is_at_initial_state
         assert len(parser.next()) == 0
@@ -196,8 +203,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
         parser.reset()
         assert parser.accepts(to_parse)
 
-        # Test a random substring of the string to parse
-        assert parser.accepts(to_parse[:random.randint(0, len(to_parse)-1)])
+    parser.accepts(to_parse[:random.randint(0, len(to_parse)-1)])
 
 def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
     parser.reset()
@@ -309,53 +315,65 @@ def extract_all_correct_sequences(parser : MultiChoicesParser, buf : list) -> It
         if c is not parser.end_symb:
             buf_.append(c)
         yield from extract_all_correct_sequences(parser_, buf_)
-        
+
+
+def extensive_toy_grammars(n : int) -> Tuple[Iterable, list]:
+    possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
+    possible_groups = list(itertools.combinations(possible_choices, 2))
+    possible_grammars = itertools.product(*([possible_groups]*n))
+    all_strings = list(''.join(x).replace('_', '') for x in itertools.product(*['ab_']*n))
+    return possible_grammars, all_strings
+
+def full_test(parser, to_parse_correct : Set[str], all_strings : List[str]) -> None:
+    for p in to_parse_correct:
+        correct_test(p, parser)
+    for p in all_strings:
+        if p not in to_parse_correct:
+            incorrect_test(p, parser)
+    all_correct_seq = sorted(extract_all_correct_sequences(parser, []))
+    assert set(all_correct_seq) == to_parse_correct
+
+def get_all_correct_sequences(grammar : List[List[str]]) -> Set[str]:
+    return set(
+        "".join(itertools.chain(*x)) for x in itertools.product(*grammar)
+    )
 
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_stress(parser_class):
     N_LIST = 3
-    possible_choices = [''.join(x).replace('_', '') for x in itertools.product('ab_','ab_')]
-    possible_groups = list(itertools.combinations(possible_choices, 2))
-    possible_grammars = itertools.product(*([possible_groups]*N_LIST))
-    all_strings = list(''.join(x).replace('_', '') for x in itertools.product(*['ab_']*N_LIST))
+    possible_grammars, all_strings = extensive_toy_grammars(N_LIST)
 
     for grammar in possible_grammars:
-        to_parse_correct = sorted(set(
-            "".join(itertools.chain(*x)) for x in itertools.product(*grammar)
-        ))
         parser = parser_class(grammar)
-        for p in to_parse_correct:
-            correct_test(p, parser)
-        for p in all_strings:
-            if p not in to_parse_correct:
-                incorrect_test(p, parser)
-        all_correct_seq = sorted(extract_all_correct_sequences(parser, []))
-        assert all_correct_seq == to_parse_correct
+        to_parse_correct = get_all_correct_sequences(grammar)
+        full_test(parser, to_parse_correct, all_strings)
 
-# def test_memory_leak():
-#     import psutil
-#     from gc import collect
+@pytest.mark.parametrize('parser_class', PARSER_CLASSES)
+def test_add_sequence(parser_class):
+    N_LIST = 2
+    possible_grammars, all_strings = extensive_toy_grammars(N_LIST)
+    for grammar in possible_grammars:
+        parser = parser_class(grammar)
+        to_parse_correct = get_all_correct_sequences(grammar)
+        for i in range(4):
+            toadd = random.choice(tuple(to_parse_correct)) + chr(99+i) # WARNING: Inefficient sampling
+            to_parse_correct.add(toadd)
+            assert parser.add_sequence(toadd)
+            assert not parser.add_sequence(toadd)
+            full_test(parser, to_parse_correct, all_strings)
 
-#     process = psutil.Process()
-#     mem_init = process.memory_info().rss
 
-#     import numpy as np
-
-
-#     l = np.random.randint(0, 10**9, 100000).astype(str)
-#     l = [
-#         ['the', 'an', "a", ""],
-#         l
-#     ]
-#     process = psutil.Process()
-#     mem_before = process.memory_info().rss
-
-#     parser = FastMultiChoicesParser(l)
-#     mem_during = process.memory_info().rss
-
-#     del parser.root
-#     del parser
-#     collect()
-#     mem_after = process.memory_info().rss
-
-#     print(mem_init, mem_before, mem_during, mem_after)
+# @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
+# def test_delete_sequence(parser_class):
+#     N_LIST = 2
+#     possible_grammars, all_strings = extensive_toy_grammars(N_LIST)
+#     for grammar in possible_grammars:
+#         parser = parser_class(grammar)
+#         to_parse_correct = get_all_correct_sequences(grammar)
+#         for _ in range(4):
+#             if len(to_parse_correct):
+#                 torm = random.choice(tuple(to_parse_correct)) # WARNING: Inefficient sampling
+#                 to_parse_correct.remove(torm)
+#                 assert parser.delete_sequence(torm)
+#                 assert not parser.delete_sequence(torm)
+#                 full_test(parser, to_parse_correct, all_strings)

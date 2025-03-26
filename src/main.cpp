@@ -58,6 +58,16 @@ PYBIND11_MODULE(_core, m) {
         (tree, is_nullable) pairs and returns the root of the connected tree.
     )pbdoc");
 
+    // Expose connect_trees function
+    m.def("add_sequence", &add_sequence, R"pbdoc(
+        Add sequence to parser tree.
+    )pbdoc");
+
+    // Expose connect_trees function
+    m.def("delete_sequence", &delete_sequence, R"pbdoc(
+        Delete sequence from parser tree.
+    )pbdoc");
+
     // Expose construct_tree function
     m.def("construct_tree", &construct_tree, R"pbdoc(
         Construct a ParserNode tree from a list of groups of sequences of integers.

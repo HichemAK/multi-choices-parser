@@ -30,7 +30,7 @@ wheels = [
 
 [[package]]
 name = "multi-choices-parser"
-version = "0.9.71"
+version = "0.10.0"
 source = { editable = "." }
 
 [package.dev-dependencies]

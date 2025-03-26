@@ -42,12 +42,15 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
 
 // Function to add a sequence to a tree
 // Returns the end node pointer if exists else null pointer
-std::shared_ptr<ParserNode> add_sequence(
+bool add_sequence(
     std::shared_ptr<ParserNode> root, 
     const std::vector<int>& sequence, 
-    std::vector<std::shared_ptr<ParserNode>>& final_nodes) 
+    std::vector<std::shared_ptr<ParserNode>>& final_nodes,
+    bool add_last = true
+) 
 {
     auto current_node = root;
+    auto created = false;
 
     for (size_t i = 0; i < sequence.size(); i++) {
         auto character = sequence[i];
@@ -55,16 +58,86 @@ std::shared_ptr<ParserNode> add_sequence(
 
         Transition to_add = {character, nullptr};
         auto it = insertIntoOrderedVector(current_node->transitions, to_add, comp_characters);
-        if (it->next == nullptr){
+        if (it->next == nullptr && (i != sequence.size()-1 || add_last)){
             it->next = std::make_shared<ParserNode>();
+            created = true;
         }
         if(i == sequence.size()-1){
             final_nodes.push_back(it->next);
         }
         current_node = it->next;
     }
-    return nullptr;
+    return created;
 }
+
+bool delete_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequence) {
+    if (!root || sequence.empty()) {
+        return false; // Invalid input or empty sequence
+    }
+
+    struct PathNode {
+        std::shared_ptr<ParserNode> node;
+        size_t transition_index;
+    };
+
+    std::vector<std::vector<PathNode>> paths_to_delete; // Store all valid paths to delete
+    std::vector<PathNode> current_path; // Track the current path during traversal
+
+    // Recursive function to explore all paths
+    std::function<void(std::shared_ptr<ParserNode>, size_t)> explore_paths = [&](std::shared_ptr<ParserNode> current_node, size_t seq_index) {
+        if (seq_index == sequence.size()) {
+            // If the sequence is fully matched, store the path
+            paths_to_delete.push_back(current_path);
+            return;
+        }
+
+        int character = sequence[seq_index];
+        for (size_t i = 0; i < current_node->transitions.size(); ++i) {
+            const auto& transition = current_node->transitions[i];
+
+            if (transition.character == SpecialSymb::EPS) {
+                // Follow epsilon transitions
+                current_path.push_back({current_node, i});
+                explore_paths(transition.next, seq_index);
+                current_path.pop_back();
+            } else if (transition.character == character) {
+                // Follow matching character transitions
+                current_path.push_back({current_node, i});
+                explore_paths(transition.next, seq_index + 1);
+                current_path.pop_back();
+            }
+        }
+    };
+
+    // Start exploring paths from the root
+    explore_paths(root, 0);
+
+    // Backtrack to delete all valid paths
+    bool deleted = false;
+    for (const auto& path : paths_to_delete) {
+        for (auto it = path.rbegin(); it != path.rend(); ++it) {
+            auto& [node, index] = *it;
+            auto& transition = node->transitions[index];
+
+            // If the transition's next node has no further transitions, delete it
+            if (transition.next && transition.next->transitions.empty()) {
+                transition.next.reset();
+            }
+
+            // Remove the transition itself
+            node->transitions.erase(node->transitions.begin() + index);
+
+            // Stop if the current node still has other transitions
+            if (!node->transitions.empty()) {
+                break;
+            }
+        }
+        deleted = true;
+    }
+
+    return deleted; // Return true if at least one path was deleted
+}
+
 
 // Function to build a tree for a single group
 std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(

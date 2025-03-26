@@ -57,6 +57,16 @@ std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group);
 // Function to construct the full parser tree from groups of sequences
 std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
 
+
+bool add_sequence(
+    std::shared_ptr<ParserNode> root, 
+    const std::vector<int>& sequence, 
+    std::vector<std::shared_ptr<ParserNode>>& final_nodes,
+    bool add_last
+);
+
+bool delete_sequence(std::shared_ptr<ParserNode> root, const std::vector<int>& sequence);
+
 // Function to check if the parser accepts a given sequence of characters
 bool accepts(ParserState& state, const std::vector<int>& sequence, bool must_end, bool end_symb_expected);
 
