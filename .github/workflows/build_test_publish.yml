@@ -99,6 +99,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        if: runner.os == 'Linux' && runner.arch == 'X64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
       # Install a host Python for running the cibuildwheel action; cibuildwheel itself will
       # drive the build across the target Python versions.
       - name: Set up Python (host for cibuildwheel)
