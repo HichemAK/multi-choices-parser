@@ -123,7 +123,7 @@ jobs:
           # Run tests against the built wheel (cibuildwheel will substitute {project} and {pytest} tokens)
           CIBW_TEST_COMMAND: "python -m pytest -q {project}/tests"
           # skip PyPy / musllinux variations we don't want
-          CIBW_SKIP: "pp* *-musllinux*"
+          CIBW_SKIP: "pp* *-musllinux* cp3??t-*"
           CIBW_TEST_REQUIRES: pytest
 
       - name: Upload Wheel to GitHub Artifacts
