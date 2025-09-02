@@ -33,7 +33,7 @@ jobs:
 
           # Get the latest commit hash (HEAD) and the second-to-latest commit hash
           PREVIOUS_COMMIT=$(git rev-parse HEAD^)
-          
+
           # If HEAD^ is not valid, use merge-base to get the common ancestor commit
           if [ $? -ne 0 ]; then
             PREVIOUS_COMMIT=$(git merge-base HEAD HEAD~1)
@@ -41,7 +41,7 @@ jobs:
 
           # Check if pyproject.toml has changed and if the version field has changed
           VERSION_CHANGED=$(git diff --name-only $PREVIOUS_COMMIT HEAD | grep -E '^pyproject.toml$' && git diff -U0 $PREVIOUS_COMMIT HEAD pyproject.toml | grep -E '^\+version =')
-          
+
           if [ -z "$VERSION_CHANGED" ]; then
             echo "Version not changed. Skipping build."
             echo "::set-output name=version_changed::false"
@@ -52,83 +52,106 @@ jobs:
           fi
 
   build_and_test:
-    name: Build & Test on ${{ matrix.platform[0] }}
-    runs-on: ${{ matrix.platform[1] }}
+    name: Build & Test on ${{ matrix.os_name }}
+    runs-on: ${{ matrix.runs_on }}
     needs: check_version
     if: needs.check_version.outputs.version_changed == 'true'
 
+    # We run one job per OS and let cibuildwheel build the relevant Python versions
+    # (cibuildwheel autodetects supported Python versions from your environment/pyproject).
     strategy:
       matrix:
-        platform: [[linux, ubuntu-latest], [macos, macos-latest], [windows, windows-latest]]
-        # platform: [[linux, ubuntu-latest]]
-        # python-version: [3.8, 3.9, 3.10, 3.11, 3.12, 3.13]  # Modify as needed
+        include:
+          - os_name: linux
+            runs_on: ubuntu-latest
+            cibw_platform: linux
+            cibw_archs: "x86_64 aarch64 ppc64le s390x"
+            # manylinux image used for x86_64 by default; you can change to manylinux_2_28 or manylinux2014
+            CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+
+          - os_name: macos
+            runs_on: macos-latest
+            cibw_platform: macos
+            cibw_archs: "x86_64 arm64"
+
+          - os_name: windows
+            runs_on: windows-latest
+            cibw_platform: windows
+            cibw_archs: "AMD64 ARM64"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      # Install a host Python for running the cibuildwheel action; cibuildwheel itself will
+      # drive the build across the target Python versions.
+      - name: Set up Python (host for cibuildwheel)
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13
+          python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install build prerequisites
         run: |
-          pip install cibuildwheel pytest
+          python -m pip install --upgrade pip setuptools wheel
 
-      - name: Build wheels
+      - name: Build wheels (cibuildwheel)
         run: |
-          python -m cibuildwheel --output-dir dist --platform ${{ matrix.platform[0] }} --arch auto64
+          python -m cibuildwheel --output-dir dist --platform ${{ matrix.cibw_platform }} --arch auto64
         env:
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_TEST_COMMAND: "python -m pytest {project}/tests"
+          # Build the architectures we want (linux: x86_64, aarch64, ppc64le, s390x)
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
+          # override manylinux image if you need a specific glibc base
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.CIBW_MANYLINUX_X86_64_IMAGE || '' }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
+          # Run tests against the built wheel (cibuildwheel will substitute {project} and {pytest} tokens)
+          CIBW_TEST_COMMAND: "pytest -q {project}/tests"
+          # skip PyPy / musllinux variations we don't want
           CIBW_SKIP: "pp* *-musllinux*"
-          CIBW_TEST_REQUIRES: pytest
-      
+
       - name: Upload Wheel to GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: python-wheels-${{ matrix.platform[0] }}
+          name: python-wheels-${{ matrix.os_name }}
           path: dist/*.whl
           retention-days: 1
 
   publish:
-      runs-on: ubuntu-latest
-      needs: build_and_test  # This job depends on the 'build' job to complete first
+    name: Publish (combine artifacts, test & publish)
+    runs-on: ubuntu-latest
+    needs: build_and_test
 
-      steps:
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
 
       - name: Download Linux Wheels
         uses: actions/download-artifact@v4
         with:
           name: python-wheels-linux
           path: dist/linux/
-  
+
       - name: Download macOS Wheels
         uses: actions/download-artifact@v4
         with:
           name: python-wheels-macos
           path: dist/macos/
-  
+
       - name: Download Windows Wheels
         uses: actions/download-artifact@v4
         with:
           name: python-wheels-windows
           path: dist/windows/
-      
+
       - name: Combine Artifacts
         run: |
           mkdir -p dist/combined
-          cp dist/linux/*.whl dist/combined/
-          cp dist/macos/*.whl dist/combined/
-          cp dist/windows/*.whl dist/combined/
+          cp dist/linux/*.whl dist/combined/ || true
+          cp dist/macos/*.whl dist/combined/ || true
+          cp dist/windows/*.whl dist/combined/ || true
 
-      - name: Download packages
+      - name: Install test tools
         run: pip install pytest pytest-cov codecov
-      
+
       - name: Install built wheel
         run: pip install --no-index --find-links=dist/combined multi-choices-parser
 
@@ -148,3 +171,4 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages_dir: dist/combined
+          skip-existing: true
