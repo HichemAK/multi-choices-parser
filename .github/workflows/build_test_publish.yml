@@ -10,6 +10,11 @@ on:
     paths:
       - "pyproject.toml"
   workflow_dispatch:
+    inputs:
+      skip_check:
+        description: 'Set to "true" to skip the version check and force the build_and_test job'
+        required: false
+        default: 'false'
 
 jobs:
   check_version:
@@ -27,7 +32,18 @@ jobs:
 
       - name: Check if version has changed
         id: version_check
+        env:
+          SKIP_CHECK: ${{ github.event.inputs.skip_check }}
         run: |
+          # If manually triggered with skip_check=true, short-circuit and force a build
+          if [ "${SKIP_CHECK:-false}" = "true" ]; then
+            echo "Manual run requested: skipping version check and forcing build."
+            # set step output `version_changed=true` so the job output propagates
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # --- original version-check logic follows ---
           # Fetch the previous commit history
           git fetch --depth=2
 
@@ -44,11 +60,11 @@ jobs:
 
           if [ -z "$VERSION_CHANGED" ]; then
             echo "Version not changed. Skipping build."
-            echo "::set-output name=version_changed::false"
+            echo "version_changed=false" >> $GITHUB_OUTPUT
             exit 0
           else
             echo "Version has changed."
-            echo "::set-output name=version_changed::true"
+            echo "version_changed=true" >> $GITHUB_OUTPUT
           fi
 
   build_and_test:
