@@ -121,7 +121,7 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.CIBW_MANYLINUX_X86_64_IMAGE || '' }}
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux_2_28
           # Run tests against the built wheel (cibuildwheel will substitute {project} and {pytest} tokens)
-          CIBW_TEST_COMMAND: "pytest -q {project}/tests"
+          CIBW_TEST_COMMAND: "python -m pytest -q {project}/tests"
           # skip PyPy / musllinux variations we don't want
           CIBW_SKIP: "pp* *-musllinux*"
 
