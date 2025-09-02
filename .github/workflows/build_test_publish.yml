@@ -124,6 +124,7 @@ jobs:
           CIBW_TEST_COMMAND: "python -m pytest -q {project}/tests"
           # skip PyPy / musllinux variations we don't want
           CIBW_SKIP: "pp* *-musllinux*"
+          CIBW_TEST_REQUIRES: pytest
 
       - name: Upload Wheel to GitHub Artifacts
         uses: actions/upload-artifact@v4
