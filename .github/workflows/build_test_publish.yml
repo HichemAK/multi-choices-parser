@@ -81,7 +81,7 @@ jobs:
           - os_name: linux
             runs_on: ubuntu-latest
             cibw_platform: linux
-            cibw_archs: "x86_64 aarch64 ppc64le s390x"
+            cibw_archs: "x86_64 aarch64 s390x"
             # manylinux image used for x86_64 by default; you can change to manylinux_2_28 or manylinux2014
             CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
 
