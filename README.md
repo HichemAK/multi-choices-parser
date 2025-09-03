@@ -27,8 +27,10 @@ pip install multi-choices-parser
 - Handle large lists of choices efficiently (e.g. millions of choices).
 - Incremental parsing: Each node and its transitions can be accessed at any moment of the parsing.
 - Extensive testing
-- Support for all Python versions >=3.8
-- Support for Linux, Windows and MacOS
+- High support coverage:
+    - Support for all Python versions >=3.8
+    - Support for Linux, Windows and MacOS
+    - **Rule of thumb (if you're into Deep Learning):** installing [torch](https://pytorch.org/get-started/locally/) works --> installing multi-choices-parser works. 
 
 ## Usage
 To use the `MultiChoicesParser`, follow these steps:
