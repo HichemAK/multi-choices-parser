@@ -9,6 +9,9 @@
     // We don't need to manually add npm global bin to PATH; the Node feature does it for us
     "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
   },
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
+  ],
   // Add Node.js 20 (LTS) to the container
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
