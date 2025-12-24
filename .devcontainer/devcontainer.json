@@ -1,15 +1,19 @@
 {
-  "name": "C++ with uv (Automated)",
+  "name": "C++ with uv & Claude CLI",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  // Dynamic Environment Variables
   "remoteEnv": {
-    // Automatically points to the .venv inside whatever your project folder is named
     "VIRTUAL_ENV": "${containerWorkspaceFolder}/.venv",
-    // Prepend the venv bin to PATH so 'python' resolves to the venv version
+    // We don't need to manually add npm global bin to PATH; the Node feature does it for us
     "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+  },
+  // Add Node.js 20 (LTS) to the container
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
   },
   "customizations": {
     "vscode": {
@@ -17,19 +21,19 @@
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
         "ms-python.python",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "Anthropic.claude-code" 
       ],
       "settings": {
-        // Point VS Code to the dynamic venv path
         "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
         "cmake.generator": "Ninja"
       }
     }
   },
-  // Initialize uv and install dependencies
-  // --no-workspace allows uv to run even if pyproject.toml doesn't exist yet
-  // --allow-existing prevents errors if re-building the container
-  "postCreateCommand": "uv sync --dev",
+  // 1. Init uv environment
+  // 2. Install Python deps
+  // 3. Install Claude Code CLI via npm
+  "postCreateCommand": "uv sync --dev && npm install -g @anthropic-ai/claude-code",
   
   "remoteUser": "vscode"
 }
