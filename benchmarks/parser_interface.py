@@ -62,16 +62,6 @@ class ParserInterface(ABC):
         """Return True if parser successfully matched a complete string."""
         pass
 
-    @abstractmethod
-    def get_memory_bytes(self) -> int:
-        """
-        Return an estimate of memory usage in bytes.
-
-        Returns:
-            Estimated memory consumption in bytes
-        """
-        pass
-
 
 class MultiChoicesParserWrapper(ParserInterface):
     """Wrapper for the multi-choices-parser implementation."""
@@ -98,25 +88,6 @@ class MultiChoicesParserWrapper(ParserInterface):
     @property
     def success(self) -> bool:
         return self._parser.success
-
-    def get_memory_bytes(self) -> int:
-        visited = set()
-        total_size = 0
-
-        def traverse(node):
-            nonlocal total_size
-            if node is None or id(node) in visited:
-                return
-            visited.add(id(node))
-            total_size += sys.getsizeof(node) + sys.getsizeof(node.transitions)
-            for trans in node.transitions:
-                total_size += sys.getsizeof(trans)
-                traverse(trans.next)
-
-        if self._parser.root is not None:
-            traverse(self._parser.root)
-
-        return total_size
 
 
 class TrieParser(ParserInterface):
@@ -175,20 +146,6 @@ class TrieParser(ParserInterface):
         if not self._finished:
             self._finished = True
             self._success = self._end_marker in self._current_node
-
-    def get_memory_bytes(self) -> int:
-        def get_dict_size(d):
-            total = sys.getsizeof(d)
-            for k, v in d.items():
-                total += sys.getsizeof(k)
-                if isinstance(v, dict):
-                    total += get_dict_size(v)
-                else:
-                    total += sys.getsizeof(v)
-            return total
-
-        return get_dict_size(self._root)
-
 
 # Registry of available parsers
 AVAILABLE_PARSERS = {

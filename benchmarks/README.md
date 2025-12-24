@@ -54,10 +54,6 @@ class MyCustomParser(ParserInterface):
     def accepts(self, string: str) -> bool:
         # Return True if string is in the accepted set
         return your_validation_logic(string)
-
-    def get_memory_bytes(self) -> int:
-        # Return estimated memory usage in bytes
-        return your_memory_estimate()
 ```
 
 2. Register it in `parser_interface.py`:
