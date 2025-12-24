@@ -40,6 +40,65 @@ auto comp_characters = [](const Transition& a, const Transition& b) {
     return a.character < b.character;
 };
 
+// Trie class implementation
+
+Trie::Trie(const std::vector<std::vector<int>>& sequences)
+    : root_(std::make_shared<ParserNode>()), is_nullable_(false) {
+    for (const auto& sequence : sequences) {
+        if (sequence.empty()) {
+            is_nullable_ = true;
+        } else {
+            ::add_sequence(root_, sequence, final_nodes_, true);
+        }
+    }
+}
+
+bool Trie::add_sequence(const std::vector<int>& sequence) {
+    return ::add_sequence(root_, sequence, final_nodes_, true);
+}
+
+// TrieConcatenation class implementation
+
+TrieConcatenation::TrieConcatenation(std::vector<Trie> tries)
+    : tries_(std::move(tries)) {
+    if (tries_.empty()) {
+        root_ = nullptr;
+    } else {
+        root_ = tries_[0].root();
+        connect();
+    }
+}
+
+void TrieConcatenation::connect() {
+    int n = tries_.size();
+    for (int i = 0; i < n; i++) {
+        const auto& trie = tries_[i];
+        const auto& final_nodes = trie.final_nodes();
+
+        // Determine what to connect to: next trie's root or nullptr (end)
+        std::shared_ptr<ParserNode> next_root = (i < n - 1) ? tries_[i + 1].root() : nullptr;
+        int ch = (next_root == nullptr) ? END : EPS;
+
+        // Connect final nodes to next trie (or END)
+        for (const auto& final_node : final_nodes) {
+            if (final_node) {
+                Transition to_add = {ch, next_root};
+                insertIntoOrderedVector(final_node->transitions, to_add, comp_characters);
+            }
+        }
+
+        // If this trie is nullable, also connect its root to the next trie
+        if (trie.is_nullable() && i < n - 1) {
+            Transition to_add = {EPS, next_root};
+            insertIntoOrderedVector(trie.root()->transitions, to_add, comp_characters);
+        } else if (trie.is_nullable() && i == n - 1) {
+            // Last trie is nullable - connect root to END
+            Transition to_add = {END, nullptr};
+            insertIntoOrderedVector(trie.root()->transitions, to_add, comp_characters);
+        }
+    }
+}
+
 // Function to add a sequence to a tree
 // Returns the end node pointer if exists else null pointer
 bool add_sequence(
@@ -180,22 +239,22 @@ std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group) {
     }
 }
 
-// Function to construct the final tree
+// Function to construct the final tree using new Trie and TrieConcatenation classes
 std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups) {
-    std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>> groups_tree_infos;
-    // Build a tree for each group
-    std::vector<std::vector<std::shared_ptr<ParserNode>>> final_nodes_per_group = {};
-    for (size_t i = 0; i < groups.size(); i++)
-    {
-        std::vector<std::shared_ptr<ParserNode>> final_nodes = {};
-        groups_tree_infos.push_back(build_group_tree(groups[i], final_nodes));
-        final_nodes_per_group.push_back(final_nodes);
+    if (groups.empty()) {
+        return nullptr;
     }
 
-    // Connect the group trees with epsilon transitions
-    groups_tree_infos.push_back({nullptr, false});
-    connect_trees(groups_tree_infos, final_nodes_per_group);
-    return std::get<0>(groups_tree_infos[0]);
+    // Build a Trie for each group
+    std::vector<Trie> tries;
+    tries.reserve(groups.size());
+    for (const auto& group : groups) {
+        tries.emplace_back(group);
+    }
+
+    // Connect the tries and return the root
+    TrieConcatenation concatenation(std::move(tries));
+    return concatenation.root();
 }
 
 int min(int a, int b){
