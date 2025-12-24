@@ -1,6 +1,6 @@
 [![Coverage](https://codecov.io/gh/HichemAK/multi-choices-parser/branch/main/graph/badge.svg)](https://codecov.io/gh/HichemAK/multi-choices-parser)
 
-# Multi-choices Parser
+# Multi-Choices Parser
 
 ## Overview
 Multi-choices Parser is a C++ efficient incremental parser for multi-choices grammars with Python bindings (3.8+). These grammars are defined as a composition of lists of choices, where each choice is a literal string and can possibly be empty (grammar form below). This parser is optimized for scenarios where the size of the lists of choices is very large, such as representing entities preceded by a determiner.
@@ -29,9 +29,8 @@ pip install multi-choices-parser
 - Extensive testing
 - High support coverage:
     - Support for all Python versions >=3.8
-    - Support for Linux, Windows and MacOS
-    - **Rule of thumb (if you're into Deep Learning):** installing [torch](https://pytorch.org/get-started/locally/) works --> installing multi-choices-parser works. 
-
+    - Support for Linux, Windows, MacOS
+ 
 ## Usage
 To use the `MultiChoicesParser`, follow these steps:
 
