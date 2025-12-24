@@ -110,10 +110,15 @@ After running, the following files are created in the output directory:
 The benchmarks compare:
 
 1. **MultiChoicesParser** - The C++ trie-based implementation from this project
-2. **SetBasedParser** - Simple Python set lookup (baseline)
-3. **PythonTrie** - Pure Python trie implementation
+2. **PythonTrie** - Pure Python trie implementation
 
 Expected characteristics:
-- MultiChoicesParser should have O(n) construction time and memory
-- Set-based lookup should have O(1) validation but O(n) memory
+- Both use step-based validation (character by character)
+- MultiChoicesParser should be faster due to C++ implementation
 - Trie implementations share prefixes, potentially using less memory for similar strings
+
+Note: PythonTrie uses significantly more memory than MultiChoicesParser and may not be suitable for large datasets (>100K strings). Consider running only MultiChoicesParser for large-scale benchmarks:
+
+```bash
+uv run python benchmarks/run_benchmarks.py --parsers multi_choices
+```
