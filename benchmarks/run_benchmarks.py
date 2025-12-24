@@ -27,9 +27,6 @@ import os
 import sys
 from datetime import datetime
 
-# Add the benchmarks directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from benchmark_runner import BenchmarkRunner
 from plotting import plot_all_benchmarks, create_combined_figure
 from parser_interface import list_available_parsers

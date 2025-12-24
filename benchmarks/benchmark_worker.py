@@ -11,11 +11,6 @@ import json
 import sys
 import time
 import tracemalloc
-import os
-
-# Add paths for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from data_generator import generate_string_list
 from parser_interface import get_parser_class
