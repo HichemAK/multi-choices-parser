@@ -12,16 +12,9 @@
 
 #include <vector>
 #include <memory>
-#include <unordered_map>
 
 enum SpecialSymb {END=-2147483647, EPS=-2147483648};
 const char NUM_SPECIAL_SYMB = 2;
-
-// Transition storage mode for ParserNode
-enum class TransitionMode {
-    SORTED_ARRAY,  // Use sorted vector with binary search (default)
-    HASH_MAP       // Use unordered_map for O(1) average lookup
-};
 
 // Forward declaration of ParserNode
 struct ParserNode;
@@ -32,26 +25,14 @@ struct Transition {
     std::shared_ptr<ParserNode> next;  // Shared pointer to the next node
 };
 
-// ParserNode structure with configurable transition storage
+// ParserNode structure
 struct ParserNode {
-    TransitionMode mode;  // Storage mode for transitions
-    std::vector<Transition> transitions;  // Used when mode == SORTED_ARRAY
-    std::unordered_map<int, std::shared_ptr<ParserNode>> transitions_map;  // Used when mode == HASH_MAP
+    std::vector<Transition> transitions;  // List of transitions from this node
 
-    // Constructor with mode selection
-    explicit ParserNode(TransitionMode m = TransitionMode::SORTED_ARRAY) : mode(m) {}
-
-    // Add a transition to another node (mode-aware)
-    void add_transition(int character, std::shared_ptr<ParserNode> next_node);
-
-    // Find a transition by character (mode-aware), returns nullptr if not found
-    std::shared_ptr<ParserNode> find_transition(int character) const;
-
-    // Get all transitions as vector (for iteration)
-    std::vector<Transition> get_all_transitions() const;
-
-    // Check if a transition exists for the given character
-    bool has_transition(int character) const;
+    // Add a transition to another node
+    void add_transition(int character, std::shared_ptr<ParserNode> next_node) {
+        transitions.push_back({character, next_node});
+    }
 };
 
 // ParserState structure to hold nodes
@@ -64,100 +45,17 @@ struct ParserState {
     }
 };
 
-/**
- * @brief A trie data structure for a single choice group.
- *
- * Encapsulates a prefix tree (trie) built from a set of sequences.
- * Each trie represents one "choice group" in the grammar, where
- * any of the sequences in the group can be matched.
- *
- * Example: For choices ["the", "an", "a"], the trie efficiently
- * represents all three options with shared prefixes.
- */
-class Trie {
-private:
-    std::shared_ptr<ParserNode> root_;
-    std::vector<std::shared_ptr<ParserNode>> final_nodes_;
-    bool is_nullable_;
-    TransitionMode mode_;
-
-public:
-    /**
-     * @brief Construct a trie from a group of sequences.
-     * @param sequences Vector of integer sequences to add to the trie.
-     *                  Empty sequences mark the trie as nullable.
-     * @param mode Transition storage mode (SORTED_ARRAY or HASH_MAP).
-     */
-    explicit Trie(const std::vector<std::vector<int>>& sequences,
-                  TransitionMode mode = TransitionMode::SORTED_ARRAY);
-
-    /**
-     * @brief Add a sequence to this trie dynamically.
-     * @param sequence The sequence to add.
-     * @return true if new nodes were created, false if sequence already existed.
-     */
-    bool add_sequence(const std::vector<int>& sequence);
-
-    /** @brief Get the root node of this trie. */
-    std::shared_ptr<ParserNode> root() const { return root_; }
-
-    /** @brief Get the final nodes (sequence endpoints) of this trie. */
-    const std::vector<std::shared_ptr<ParserNode>>& final_nodes() const { return final_nodes_; }
-
-    /** @brief Check if this trie accepts the empty sequence. */
-    bool is_nullable() const { return is_nullable_; }
-
-    /** @brief Get the transition mode used by this trie. */
-    TransitionMode mode() const { return mode_; }
-};
-
-/**
- * @brief Concatenates multiple tries to form a complete grammar.
- *
- * Connects a sequence of tries with epsilon transitions, allowing
- * the parser to match one choice from each group in order.
- *
- * Example: For grammar [["the", "a"], ["cat", "dog"]], this connects
- * the two tries so "the cat", "the dog", "a cat", "a dog" are all valid.
- *
- * Handles nullable tries by adding skip transitions.
- */
-class TrieConcatenation {
-private:
-    std::vector<Trie> tries_;
-    std::shared_ptr<ParserNode> root_;
-
-    /** @brief Connect tries with epsilon/end transitions. */
-    void connect();
-
-public:
-    /**
-     * @brief Construct a concatenation from a vector of tries.
-     * @param tries Vector of tries to concatenate. Takes ownership via move.
-     */
-    explicit TrieConcatenation(std::vector<Trie> tries);
-
-    /** @brief Get the root node for parser state initialization. */
-    std::shared_ptr<ParserNode> root() const { return root_; }
-
-    /** @brief Get access to the individual tries. */
-    const std::vector<Trie>& tries() const { return tries_; }
-};
-
-// Legacy function - use Trie class instead
-// @deprecated Use Trie constructor for building group trees
+// Function to construct a tree for a single group of sequences
 std::tuple<std::shared_ptr<ParserNode>, bool> build_group_tree(
     const std::vector<std::vector<int>>& group, std::vector<std::shared_ptr<ParserNode>>& final_nodes
 );
 
-// Legacy function - use TrieConcatenation class instead
-// @deprecated Use TrieConcatenation for connecting tries
-void connect_trees(const std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees,
+// Function to connect multiple group trees with epsilon transitions
+void connect_trees(const std::vector<std::tuple<std::shared_ptr<ParserNode>, bool>>& group_trees, 
 std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group);
 
 // Function to construct the full parser tree from groups of sequences
-std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups,
-                                            TransitionMode mode = TransitionMode::SORTED_ARRAY);
+std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
 
 
 bool add_sequence(
