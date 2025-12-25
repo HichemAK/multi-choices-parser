@@ -50,22 +50,22 @@ def parse_args():
     parser.add_argument(
         '--num-steps',
         type=int,
-        default=20,
-        help='Number of size steps in logarithmic scale (default: 20)'
+        default=10,
+        help='Number of size steps in logarithmic scale (default: 10)'
     )
 
     parser.add_argument(
         '--construction-repeats',
         type=int,
-        default=20,
-        help='Number of construction benchmark repeats (default: 20)'
+        default=10,
+        help='Number of construction benchmark repeats (default: 10)'
     )
 
     parser.add_argument(
         '--validation-repeats',
         type=int,
-        default=1000,
-        help='Number of validation queries per size (default: 1000)'
+        default=100,
+        help='Number of validation queries per size (default: 100)'
     )
 
     parser.add_argument(

@@ -12,15 +12,21 @@ import sys
 import time
 import tracemalloc
 
+import numpy as np
+
 from data_generator import generate_string_list
 from parser_interface import get_parser_class
 
 
-def run_construction_benchmark(parser_name: str, size: int, seed: int,
-                                min_length: int, max_length: int) -> dict:
+def run_benchmark(parser_name: str, size: int, seed: int,
+                                min_length: int, max_length: int, num_queries: int) -> dict:
     """Run construction benchmark and return results."""
     # Generate strings
     strings = generate_string_list(size, min_length, max_length, seed)
+    # Select random strings to validate
+    rng = np.random.default_rng(seed + 1000)
+    indices = rng.integers(0, len(strings), size=num_queries)
+    query_strings = [strings[i] for i in indices]
 
     parser_class = get_parser_class(parser_name)
 
@@ -31,15 +37,33 @@ def run_construction_benchmark(parser_name: str, size: int, seed: int,
     parser = parser_class(strings)
 
     end_time = time.perf_counter()
-    current, peak = tracemalloc.get_traced_memory()
+    time_construction = end_time - start_time
+
+    current, peak_construction = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # Measure validation (reusing the same parser instance)
+    tracemalloc.start()
+    start_time = time.perf_counter()
+
+    for s in query_strings:
+        parser.reset()
+        result = validate_string(parser, s)
+        if not result:
+            raise RuntimeError(f"Parser should accept '{s}'")
+
+    end_time = time.perf_counter()
+    time_validation = end_time - start_time
+    current, peak_validation = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     return {
-        'type': 'construction',
         'parser': parser_name,
         'size': size,
-        'time': end_time - start_time,
-        'memory': peak,
+        'time_construction': time_construction,
+        'memory_construction': peak_construction,
+        'time_validation': time_validation,
+        'memory_validation': peak_validation,
     }
 
 
@@ -62,56 +86,8 @@ def validate_string(parser, string: str) -> bool:
         return parser._end_symb in parser._parser.next()
 
 
-def run_validation_benchmark(parser_name: str, size: int, seed: int,
-                              min_length: int, max_length: int,
-                              num_queries: int) -> dict:
-    """Run validation benchmark and return results."""
-    import numpy as np
-
-    # Generate strings
-    strings = generate_string_list(size, min_length, max_length, seed)
-
-    parser_class = get_parser_class(parser_name)
-
-    # Construct parser once
-    parser = parser_class(strings)
-
-    # Select random strings to validate
-    rng = np.random.default_rng(seed + 1000)
-    indices = rng.integers(0, len(strings), size=num_queries)
-    query_strings = [strings[i] for i in indices]
-
-    # Measure validation (reusing the same parser instance)
-    tracemalloc.start()
-    start_time = time.perf_counter()
-
-    for s in query_strings:
-        parser.reset()
-        result = validate_string(parser, s)
-        if not result:
-            raise RuntimeError(f"Parser should accept '{s}'")
-
-    end_time = time.perf_counter()
-    current, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    total_time = end_time - start_time
-    avg_time = total_time / num_queries
-
-    return {
-        'type': 'validation',
-        'parser': parser_name,
-        'size': size,
-        'time': avg_time,
-        'total_time': total_time,
-        'num_queries': num_queries,
-        'memory': peak,
-    }
-
-
 def main():
     parser = argparse.ArgumentParser(description='Benchmark worker process')
-    parser.add_argument('--benchmark-type', required=True, choices=['construction', 'validation'])
     parser.add_argument('--parser', required=True)
     parser.add_argument('--size', type=int, required=True)
     parser.add_argument('--seed', type=int, default=42)
@@ -122,19 +98,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        if args.benchmark_type == 'construction':
-            result = run_construction_benchmark(
-                args.parser, args.size, args.seed,
-                args.min_length, args.max_length
-            )
-        else:
-            result = run_validation_benchmark(
-                args.parser, args.size, args.seed,
-                args.min_length, args.max_length, args.num_queries
-            )
-
+        result = run_benchmark(
+            args.parser, args.size, args.seed,
+            args.min_length, args.max_length, args.num_queries
+        )
         print(json.dumps(result))
-        sys.exit(0)
 
     except Exception as e:
         error_result = {

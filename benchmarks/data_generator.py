@@ -79,4 +79,4 @@ def get_benchmark_sizes(num_steps: int = 20) -> List[int]:
     Returns:
         List of sizes
     """
-    return generate_logarithmic_sizes(1, 1_000_000, num_steps)
+    return generate_logarithmic_sizes(1, 100000, num_steps)

@@ -305,6 +305,63 @@ def plot_validation_time(
     return fig
 
 
+def plot_validation_memory(
+    df: pd.DataFrame,
+    parsers: List[str] = None,
+    title: str = 'Validation Memory vs List Size',
+    output_path: str = None,
+    figsize: Tuple[int, int] = (10, 6)
+) -> plt.Figure:
+    """
+    Plot validation memory consumption vs list size with confidence intervals.
+
+    Args:
+        df: DataFrame with benchmark results
+        parsers: List of parsers to include (default: all)
+        title: Plot title
+        output_path: Path to save the figure (optional)
+        figsize: Figure size
+
+    Returns:
+        matplotlib Figure
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if parsers is None:
+        parsers = df['parser'].unique()
+
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['validation_memory_mean'].values,
+            parser_df['validation_memory_ci_low'].values,
+            parser_df['validation_memory_ci_high'].values,
+            label=parser,
+            style=style
+        )
+
+    format_size_axis(ax, 'x')
+    format_memory_axis(ax, 'y')
+
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Validation Memory')
+    ax.set_title(title)
+    ax.legend(loc='upper left')
+    ax.grid(True, alpha=0.3, which='both')
+
+    plt.tight_layout()
+
+    if output_path:
+        fig.savefig(output_path, dpi=150, bbox_inches='tight')
+        print(f"Saved plot to {output_path}")
+
+    return fig
+
+
 def plot_all_benchmarks(
     df: pd.DataFrame,
     parsers: List[str] = None,
@@ -336,15 +393,21 @@ def plot_all_benchmarks(
         df, parsers, output_path=output_path
     )
 
-    # Memory consumption plot
-    output_path = os.path.join(output_dir, f'{prefix}_memory.png') if output_dir else None
-    figures['memory'] = plot_construction_memory(
+    # Construction memory plot
+    output_path = os.path.join(output_dir, f'{prefix}_construction_memory.png') if output_dir else None
+    figures['construction_memory'] = plot_construction_memory(
         df, parsers, output_path=output_path
     )
 
     # Validation time plot
     output_path = os.path.join(output_dir, f'{prefix}_validation_time.png') if output_dir else None
     figures['validation_time'] = plot_validation_time(
+        df, parsers, output_path=output_path
+    )
+
+    # Validation memory plot
+    output_path = os.path.join(output_dir, f'{prefix}_validation_memory.png') if output_dir else None
+    figures['validation_memory'] = plot_validation_memory(
         df, parsers, output_path=output_path
     )
 
@@ -358,10 +421,10 @@ def create_combined_figure(
     df: pd.DataFrame,
     parsers: List[str] = None,
     output_path: str = None,
-    figsize: Tuple[int, int] = (15, 5)
+    figsize: Tuple[int, int] = (12, 10)
 ) -> plt.Figure:
     """
-    Create a combined figure with all three plots side by side.
+    Create a combined figure with all four plots in a 2x2 grid.
 
     Args:
         df: DataFrame with benchmark results
@@ -372,13 +435,13 @@ def create_combined_figure(
     Returns:
         matplotlib Figure
     """
-    fig, axes = plt.subplots(1, 3, figsize=figsize)
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
 
     if parsers is None:
         parsers = df['parser'].unique()
 
-    # Plot 1: Construction Time
-    ax = axes[0]
+    # Plot 1: Construction Time (top-left)
+    ax = axes[0, 0]
     for parser in parsers:
         parser_df = df[df['parser'] == parser].sort_values('size')
         style = get_parser_style(parser)
@@ -399,8 +462,8 @@ def create_combined_figure(
     ax.legend(loc='upper left', fontsize=8)
     ax.grid(True, alpha=0.3, which='both')
 
-    # Plot 2: Memory
-    ax = axes[1]
+    # Plot 2: Construction Memory (top-right)
+    ax = axes[0, 1]
     for parser in parsers:
         parser_df = df[df['parser'] == parser].sort_values('size')
         style = get_parser_style(parser)
@@ -417,12 +480,12 @@ def create_combined_figure(
     format_memory_axis(ax, 'y')
     ax.set_xlabel('Number of Strings')
     ax.set_ylabel('Memory Consumption')
-    ax.set_title('Memory Consumption')
+    ax.set_title('Construction Memory')
     ax.legend(loc='upper left', fontsize=8)
     ax.grid(True, alpha=0.3, which='both')
 
-    # Plot 3: Validation Time
-    ax = axes[2]
+    # Plot 3: Validation Time (bottom-left)
+    ax = axes[1, 0]
     for parser in parsers:
         parser_df = df[df['parser'] == parser].sort_values('size')
         style = get_parser_style(parser)
@@ -440,6 +503,28 @@ def create_combined_figure(
     ax.set_xlabel('Number of Strings')
     ax.set_ylabel('Validation Time (per query)')
     ax.set_title('Validation Time')
+    ax.legend(loc='upper left', fontsize=8)
+    ax.grid(True, alpha=0.3, which='both')
+
+    # Plot 4: Validation Memory (bottom-right)
+    ax = axes[1, 1]
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['validation_memory_mean'].values,
+            parser_df['validation_memory_ci_low'].values,
+            parser_df['validation_memory_ci_high'].values,
+            label=parser,
+            style=style
+        )
+    format_size_axis(ax, 'x')
+    format_memory_axis(ax, 'y')
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Memory Consumption')
+    ax.set_title('Validation Memory')
     ax.legend(loc='upper left', fontsize=8)
     ax.grid(True, alpha=0.3, which='both')
 

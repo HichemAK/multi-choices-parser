@@ -99,13 +99,12 @@ class BenchmarkRunner:
         if self.verbose:
             print(msg, flush=True)
 
-    def _run_worker(self, benchmark_type: str, parser_name: str, size: int,
+    def _run_worker(self, parser_name: str, size: int,
                     repeat_seed: int = 0) -> dict:
         """Run a single benchmark in a subprocess."""
         cmd = [
             sys.executable,
             self.worker_script,
-            '--benchmark-type', benchmark_type,
             '--parser', parser_name,
             '--size', str(size),
             '--seed', str(self.seed + repeat_seed),
@@ -135,18 +134,14 @@ class BenchmarkRunner:
                 self._log(f"\n  Parser: {parser_name}")
                 result = BenchmarkResult(parser_name=parser_name, list_size=size)
 
-                # Run construction benchmarks
-                self._log(f"    Construction ({self.construction_repeats} repeats)...")
+                # Run combined benchmarks (construction + validation)
+                self._log(f"    Running {self.construction_repeats} repeats ({self.validation_repeats} queries each)...")
                 for i in range(self.construction_repeats):
-                    data = self._run_worker('construction', parser_name, size, repeat_seed=i)
-                    result.construction_times.append(data['time'])
-                    result.construction_memories.append(data['memory'])
-
-                # Run validation benchmark
-                self._log(f"    Validation ({self.validation_repeats} queries)...")
-                data = self._run_worker('validation', parser_name, size)
-                result.validation_times.append(data['time'])
-                result.validation_memories.append(data['memory'])
+                    data = self._run_worker(parser_name, size, repeat_seed=i)
+                    result.construction_times.append(data['time_construction'])
+                    result.construction_memories.append(data['memory_construction'])
+                    result.validation_times.append(data['time_validation'] / self.validation_repeats)
+                    result.validation_memories.append(data['memory_validation'])
 
                 self.results[parser_name][size] = result
 
@@ -154,10 +149,13 @@ class BenchmarkRunner:
                 c_stats = result.construction_time_stats()
                 v_stats = result.validation_time_stats()
                 m_stats = result.construction_memory_stats()
+                vm_stats = result.validation_memory_stats()
+
 
                 self._log(f"    -> Construction: {c_stats['mean']*1000:.3f}ms (+/- {c_stats['std']*1000:.3f}ms)")
-                self._log(f"    -> Validation: {v_stats['mean']*1e6:.3f}us per query")
-                self._log(f"    -> Memory: {m_stats['mean']/1024:.2f}KB")
+                self._log(f"    -> Validation: {v_stats['mean']*1e6:.3f}us (+/- {v_stats['std']*1e6:.3f}us) per query")
+                self._log(f"    -> Memory (Construction): {m_stats['mean']/1024:.2f}KB (+/- {m_stats['std']/1024:.2f}KB)")
+                self._log(f"    -> Memory (Validation): {vm_stats['mean']/1024:.2f}KB (+/- {vm_stats['std']/1024:.2f}KB)")
 
         return self.results
 
@@ -171,6 +169,7 @@ class BenchmarkRunner:
                 c_time = result.construction_time_stats()
                 c_mem = result.construction_memory_stats()
                 v_time = result.validation_time_stats()
+                v_mem = result.validation_memory_stats()
 
                 rows.append({
                     'parser': parser_name,
@@ -187,6 +186,10 @@ class BenchmarkRunner:
                     'validation_time_std': v_time['std'],
                     'validation_time_ci_low': v_time['ci_low'],
                     'validation_time_ci_high': v_time['ci_high'],
+                    'validation_memory_mean': v_mem['mean'],
+                    'validation_memory_std': v_mem['std'],
+                    'validation_memory_ci_low': v_mem['ci_low'],
+                    'validation_memory_ci_high': v_mem['ci_high'],
                 })
 
         return pd.DataFrame(rows)

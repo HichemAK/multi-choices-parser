@@ -7,4 +7,4 @@ dist
 CMakeFiles
 CMakeCache.txt
 build
-benchmarks/results
+results
