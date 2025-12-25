@@ -10,7 +10,10 @@
 from __future__ import annotations
 
 from . import _core
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
+
+# Re-export TransitionMode enum for convenience
+TransitionMode = _core.TransitionMode
 
 class End:
     def __repr__(self) -> str:
@@ -66,7 +69,8 @@ class MultiChoicesParser:
     """
 
 
-    def __init__(self, list_of_choices: List[List[Union[Tuple[int], str]]], alphabet=None, end_symb=DEFAULT_END_SYMB) -> None:
+    def __init__(self, list_of_choices: List[List[Union[Tuple[int], str]]], alphabet=None, end_symb=DEFAULT_END_SYMB,
+                 transition_mode: Optional[_core.TransitionMode] = None) -> None:
         """
         Initialize the parser using a list of choices (a list of lists) which correspond
         to the lists introduced in the documentation of the class.
@@ -76,9 +80,13 @@ class MultiChoicesParser:
                 Each choice can be a tuple of integers or a string.
             end_symb (Union[int, str], optional): An optional end symbol to signify the end of input.
             alphabet has no use, ignore it.
+            transition_mode (TransitionMode, optional): The transition storage mode.
+                - TransitionMode.SORTED_ARRAY (default): Uses sorted vector with binary search O(log n).
+                - TransitionMode.HASH_MAP: Uses hash map for O(1) average lookup.
         """
         self.end_symb = end_symb
         self.alphabet = alphabet
+        self.transition_mode = transition_mode if transition_mode is not None else _core.TransitionMode.SORTED_ARRAY
 
         # Determine the mode (string mode or integer mode) based on the first element
         if list_of_choices and list_of_choices[0] and isinstance(list_of_choices[0][0], str):
@@ -90,9 +98,9 @@ class MultiChoicesParser:
         self.can_be_empty = []
         if self.string_mode:
             list_of_choices = [[[ord(ch) for ch in choice] for choice in choices] for choices in list_of_choices]
-        
+
         if len(list_of_choices):
-            self.root = _core.construct_tree(list_of_choices)
+            self.root = _core.construct_tree(list_of_choices, self.transition_mode)
 
             # Initialize the current state
             self.current_state = _core.ParserState()
@@ -168,9 +176,10 @@ class MultiChoicesParser:
         Returns:
             FastMultiChoicesParser: A new parser instance.
         """
-        new_parser = MultiChoicesParser([], end_symb=self.end_symb)
+        new_parser = MultiChoicesParser([], end_symb=self.end_symb, transition_mode=self.transition_mode)
         new_parser.root = self.root  # Share the same roots
         new_parser.string_mode = self.string_mode
+        new_parser.transition_mode = self.transition_mode
         if stateful:
             new_parser.current_state = self.current_state
             new_parser.success = self.success

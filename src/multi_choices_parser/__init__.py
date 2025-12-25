@@ -7,4 +7,4 @@
 
 # Authors: Hichem Ammar Khodja
 
-from .parser import MultiChoicesParser, DEFAULT_END_SYMB, ParserError
+from .parser import MultiChoicesParser, DEFAULT_END_SYMB, ParserError, TransitionMode

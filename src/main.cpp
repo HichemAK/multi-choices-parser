@@ -18,6 +18,12 @@ namespace py = pybind11;
 PYBIND11_MODULE(_core, m) {
     m.doc() = "pybind11 ParserNode module with epsilon transitions and group-based tree construction";
 
+    // Expose TransitionMode enum
+    py::enum_<TransitionMode>(m, "TransitionMode")
+        .value("SORTED_ARRAY", TransitionMode::SORTED_ARRAY)
+        .value("HASH_MAP", TransitionMode::HASH_MAP)
+        .export_values();
+
     // Expose SpecialSymb enum
     py::enum_<SpecialSymb>(m, "SpecialSymb")
         .value("END", SpecialSymb::END)
@@ -36,9 +42,14 @@ PYBIND11_MODULE(_core, m) {
 
     // Expose ParserNode
     py::class_<ParserNode, std::shared_ptr<ParserNode>>(m, "ParserNode")
-        .def(py::init<>()) // Default constructor
+        .def(py::init<TransitionMode>(), py::arg("mode") = TransitionMode::SORTED_ARRAY)
+        .def_readwrite("mode", &ParserNode::mode)
         .def_readwrite("transitions", &ParserNode::transitions)
-        .def("add_transition", &ParserNode::add_transition, "Add a transition to another node");
+        .def_readwrite("transitions_map", &ParserNode::transitions_map)
+        .def("add_transition", &ParserNode::add_transition, "Add a transition to another node")
+        .def("find_transition", &ParserNode::find_transition, "Find a transition by character")
+        .def("has_transition", &ParserNode::has_transition, "Check if transition exists")
+        .def("get_all_transitions", &ParserNode::get_all_transitions, "Get all transitions as vector");
 
     // Expose ParserState
     py::class_<ParserState>(m, "ParserState")
@@ -69,10 +80,17 @@ PYBIND11_MODULE(_core, m) {
     )pbdoc");
 
     // Expose construct_tree function
-    m.def("construct_tree", &construct_tree, R"pbdoc(
+    m.def("construct_tree", &construct_tree,
+          py::arg("groups"),
+          py::arg("mode") = TransitionMode::SORTED_ARRAY,
+          R"pbdoc(
         Construct a ParserNode tree from a list of groups of sequences of integers.
         Each group is a list of sequences, and the tree supports epsilon transitions
         for nullable groups.
+
+        Args:
+            groups: List of groups of sequences (list of list of list of int)
+            mode: TransitionMode.SORTED_ARRAY (default) or TransitionMode.HASH_MAP
     )pbdoc");
 
     // Expose accepts function

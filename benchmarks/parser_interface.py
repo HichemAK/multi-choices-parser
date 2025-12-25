@@ -58,15 +58,42 @@ class ParserInterface(ABC):
 
 
 class MultiChoicesParserWrapper(ParserInterface):
-    """Wrapper for the multi-choices-parser implementation."""
+    """Wrapper for the multi-choices-parser implementation (sorted array mode)."""
 
     @classmethod
     def name(cls) -> str:
         return "MultiChoicesParser"
 
     def __init__(self, strings: List[str]) -> None:
-        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
-        self._parser = MultiChoicesParser([strings])
+        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB, TransitionMode
+        self._parser = MultiChoicesParser([strings], transition_mode=TransitionMode.SORTED_ARRAY)
+        self._end_symb = DEFAULT_END_SYMB
+
+    def step(self, char: str) -> None:
+        self._parser.step(char)
+
+    def reset(self) -> None:
+        self._parser.reset()
+
+    @property
+    def finished(self) -> bool:
+        return self._parser.finished
+
+    @property
+    def success(self) -> bool:
+        return self._parser.success
+
+
+class MultiChoicesHashMapWrapper(ParserInterface):
+    """Wrapper for the multi-choices-parser implementation (hash map mode)."""
+
+    @classmethod
+    def name(cls) -> str:
+        return "MultiChoicesHashMap"
+
+    def __init__(self, strings: List[str]) -> None:
+        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB, TransitionMode
+        self._parser = MultiChoicesParser([strings], transition_mode=TransitionMode.HASH_MAP)
         self._end_symb = DEFAULT_END_SYMB
 
     def step(self, char: str) -> None:
@@ -144,6 +171,7 @@ class TrieParser(ParserInterface):
 # Registry of available parsers
 AVAILABLE_PARSERS = {
     'multi_choices': MultiChoicesParserWrapper,
+    'multi_choices_hashmap': MultiChoicesHashMapWrapper,
     'python_trie': TrieParser,
 }
 

@@ -12,9 +12,16 @@
 
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 enum SpecialSymb {END=-2147483647, EPS=-2147483648};
 const char NUM_SPECIAL_SYMB = 2;
+
+// Transition storage mode for ParserNode
+enum class TransitionMode {
+    SORTED_ARRAY,  // Use sorted vector with binary search (default)
+    HASH_MAP       // Use unordered_map for O(1) average lookup
+};
 
 // Forward declaration of ParserNode
 struct ParserNode;
@@ -25,14 +32,26 @@ struct Transition {
     std::shared_ptr<ParserNode> next;  // Shared pointer to the next node
 };
 
-// ParserNode structure
+// ParserNode structure with configurable transition storage
 struct ParserNode {
-    std::vector<Transition> transitions;  // List of transitions from this node
+    TransitionMode mode;  // Storage mode for transitions
+    std::vector<Transition> transitions;  // Used when mode == SORTED_ARRAY
+    std::unordered_map<int, std::shared_ptr<ParserNode>> transitions_map;  // Used when mode == HASH_MAP
 
-    // Add a transition to another node
-    void add_transition(int character, std::shared_ptr<ParserNode> next_node) {
-        transitions.push_back({character, next_node});
-    }
+    // Constructor with mode selection
+    explicit ParserNode(TransitionMode m = TransitionMode::SORTED_ARRAY) : mode(m) {}
+
+    // Add a transition to another node (mode-aware)
+    void add_transition(int character, std::shared_ptr<ParserNode> next_node);
+
+    // Find a transition by character (mode-aware), returns nullptr if not found
+    std::shared_ptr<ParserNode> find_transition(int character) const;
+
+    // Get all transitions as vector (for iteration)
+    std::vector<Transition> get_all_transitions() const;
+
+    // Check if a transition exists for the given character
+    bool has_transition(int character) const;
 };
 
 // ParserState structure to hold nodes
@@ -60,14 +79,17 @@ private:
     std::shared_ptr<ParserNode> root_;
     std::vector<std::shared_ptr<ParserNode>> final_nodes_;
     bool is_nullable_;
+    TransitionMode mode_;
 
 public:
     /**
      * @brief Construct a trie from a group of sequences.
      * @param sequences Vector of integer sequences to add to the trie.
      *                  Empty sequences mark the trie as nullable.
+     * @param mode Transition storage mode (SORTED_ARRAY or HASH_MAP).
      */
-    explicit Trie(const std::vector<std::vector<int>>& sequences);
+    explicit Trie(const std::vector<std::vector<int>>& sequences,
+                  TransitionMode mode = TransitionMode::SORTED_ARRAY);
 
     /**
      * @brief Add a sequence to this trie dynamically.
@@ -84,6 +106,9 @@ public:
 
     /** @brief Check if this trie accepts the empty sequence. */
     bool is_nullable() const { return is_nullable_; }
+
+    /** @brief Get the transition mode used by this trie. */
+    TransitionMode mode() const { return mode_; }
 };
 
 /**
@@ -131,7 +156,8 @@ void connect_trees(const std::vector<std::tuple<std::shared_ptr<ParserNode>, boo
 std::vector<std::vector<std::shared_ptr<ParserNode>>>& final_nodes_per_group);
 
 // Function to construct the full parser tree from groups of sequences
-std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups);
+std::shared_ptr<ParserNode> construct_tree(const std::vector<std::vector<std::vector<int>>>& groups,
+                                            TransitionMode mode = TransitionMode::SORTED_ARRAY);
 
 
 bool add_sequence(

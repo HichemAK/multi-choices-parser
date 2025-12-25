@@ -11,7 +11,7 @@ import itertools
 import json
 from typing import Iterable, Iterator, List, Set, Tuple, Union
 
-from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
+from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB, TransitionMode
 import pytest
 import random
 
@@ -20,6 +20,8 @@ from multi_choices_parser.parser import ParserError
 TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
 PARSER_CLASSES = [MultiChoicesParser]
+
+TRANSITION_MODES = [TransitionMode.SORTED_ARRAY, TransitionMode.HASH_MAP]
 
 def appleorange_grammars():
     yield [
@@ -154,6 +156,13 @@ def adapt_grammar_to_parser(grammar, parser_class):
             grammar = [[[x[0] for x in choice] for choice in choices] for choices in grammar]
     return grammar
 
+
+def create_parser(parser_class, grammar, alphabet=None, end_symb=DEFAULT_END_SYMB, transition_mode=TransitionMode.SORTED_ARRAY):
+    """Helper to create parser with transition_mode support."""
+    if parser_class is MultiChoicesParser:
+        return parser_class(grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
+    return parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+
 def split_according_to_alphabet(text : Union[str, List[int]], alphabet : Union[str, Tuple[Union[str, Tuple[int]]]]) -> Tuple[list, bool]:
     if alphabet is None:
         return text, True
@@ -223,12 +232,13 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 @pytest.mark.parametrize(["grammar_alphabet", "to_parse", "nexts"],
                          grammar_expected_next())
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
-def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None:
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb, transition_mode) -> None:
     grammar, alphabet = grammar_alphabet
     if alphabet is not None and parser_class is MultiChoicesParser:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
-    parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+    parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
     nexts = nexts + [(end_symb, )]
     for c, n in zip(list(split_according_to_alphabet(to_parse, parser.alphabet)[0]) + [end_symb], nexts):
         if c is end_symb:
@@ -242,23 +252,25 @@ def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None
                          all_grammars())
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_alphabet(parser_class, grammar_alphabet, end_symb) -> None:    
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_alphabet(parser_class, grammar_alphabet, end_symb, transition_mode) -> None:
     grammar, alphabet = grammar_alphabet
     if parser_class is MultiChoicesParser:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
-    parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+    parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
     if alphabet is None:
         assert set(parser.alphabet) == set(c for y in grammar for x in y for c in x)
 
 @pytest.mark.parametrize("grammar_alphabet", all_grammars())
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_parse_incorrect(parser_class, grammar_alphabet, end_symb, transition_mode) -> None:
     grammar, alphabet = grammar_alphabet
     if alphabet is not None and parser_class is MultiChoicesParser:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
-    parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+    parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
     to_parse_incorrect = [
         ('z'),
         ("them"),
@@ -273,13 +285,14 @@ def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
 @pytest.mark.parametrize('grammar_alphabet', all_grammars())
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_parse_correct(parser_class, grammar_alphabet, end_symb):
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_parse_correct(parser_class, grammar_alphabet, end_symb, transition_mode):
 
     grammar, alphabet = grammar_alphabet
     if alphabet is not None and parser_class is MultiChoicesParser:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
-    parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+    parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
     to_parse_correct = [
         itertools.chain(*x) for x in itertools.product(*grammar)
     ]
@@ -289,12 +302,13 @@ def test_parse_correct(parser_class, grammar_alphabet, end_symb):
 @pytest.mark.parametrize('grammar_alphabet', appleorange_grammars())
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_copy(parser_class, grammar_alphabet, end_symb):
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_copy(parser_class, grammar_alphabet, end_symb, transition_mode):
     grammar, alphabet = grammar_alphabet
     if alphabet is not None and parser_class is MultiChoicesParser:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
-    parser = parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
+    parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb, transition_mode=transition_mode)
 
     parser.step('a')
     tests = grammar[1] + ['n'+x for x in grammar[1]]
@@ -339,21 +353,23 @@ def get_all_correct_sequences(grammar : List[List[str]]) -> Set[str]:
     )
 
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_stress(parser_class):
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_stress(parser_class, transition_mode):
     N_LIST = 3
     possible_grammars, all_strings = extensive_toy_grammars(N_LIST)
 
     for grammar in possible_grammars:
-        parser = parser_class(grammar)
+        parser = create_parser(parser_class, grammar, transition_mode=transition_mode)
         to_parse_correct = get_all_correct_sequences(grammar)
         full_test(parser, to_parse_correct, all_strings)
 
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
-def test_add_sequence(parser_class):
+@pytest.mark.parametrize('transition_mode', TRANSITION_MODES)
+def test_add_sequence(parser_class, transition_mode):
     N_LIST = 2
     possible_grammars, all_strings = extensive_toy_grammars(N_LIST)
     for grammar in possible_grammars:
-        parser = parser_class(grammar)
+        parser = create_parser(parser_class, grammar, transition_mode=transition_mode)
         to_parse_correct = get_all_correct_sequences(grammar)
         for i in range(4):
             toadd = random.choice(tuple(to_parse_correct)) + chr(99+i) # WARNING: Inefficient sampling
