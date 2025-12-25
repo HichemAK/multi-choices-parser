@@ -7,7 +7,9 @@ authors = [
     { name = "Hichem Ammar Khodja", email = "hichem5696@gmail.com" }
 ]
 requires-python = ">=3.8"
-dependencies = []
+dependencies = [
+    "dawg2>=0.13.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/HichemAK/multi-choices-parser"
