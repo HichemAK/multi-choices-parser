@@ -11,15 +11,15 @@ import itertools
 import json
 from typing import Iterable, Iterator, List, Set, Tuple, Union
 
-from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
+from multi_choices_parser.trie import MultiChoicesParserTrie, DEFAULT_END_SYMB
 import pytest
 import random
 
-from multi_choices_parser.parser import ParserError
+from multi_choices_parser.trie import ParserError
 
 TEST_END_SYMBS = [DEFAULT_END_SYMB, "ezaoijoir", 2168721468721]
 
-PARSER_CLASSES = [MultiChoicesParser]
+PARSER_CLASSES = [MultiChoicesParserTrie]
 
 
 def appleorange_grammars():
@@ -149,7 +149,7 @@ def alphabet_constrained_grammars():
     # ['.']], ["Ġ" + x for x in alphabet]
 
 def adapt_grammar_to_parser(grammar, parser_class):
-    if parser_class is MultiChoicesParser:
+    if parser_class is MultiChoicesParserTrie:
         choice1 = grammar[0][0][0]
         if isinstance(choice1, tuple) and isinstance(choice1[0], int):
             grammar = [[[x[0] for x in choice] for choice in choices] for choices in grammar]
@@ -158,7 +158,7 @@ def adapt_grammar_to_parser(grammar, parser_class):
 
 def create_parser(parser_class, grammar, alphabet=None, end_symb=DEFAULT_END_SYMB):
     """Helper to create parser with transition_mode support."""
-    if parser_class is MultiChoicesParser:
+    if parser_class is MultiChoicesParserTrie:
         return parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
     return parser_class(grammar, alphabet=alphabet, end_symb=end_symb)
 
@@ -182,7 +182,7 @@ def split_according_to_alphabet(text : Union[str, List[int]], alphabet : Union[s
             all_str = True
     return res, len(buf) == 0
 
-def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_accept=True) -> None:
+def correct_test(to_parse : str, parser : MultiChoicesParserTrie, reset=True, test_accept=True) -> None:
     random.seed(42112)
     if reset:
         parser.reset()
@@ -213,7 +213,7 @@ def correct_test(to_parse : str, parser : MultiChoicesParser, reset=True, test_a
 
     parser.accepts(to_parse[:random.randint(0, len(to_parse)-1)])
 
-def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
+def incorrect_test(to_parse : str, parser : MultiChoicesParserTrie) -> None:
     parser.reset()
     to_parse = tuple(to_parse) + (parser.end_symb, )
     for c in to_parse:
@@ -233,7 +233,7 @@ def incorrect_test(to_parse : str, parser : MultiChoicesParser) -> None:
 @pytest.mark.parametrize('end_symb', TEST_END_SYMBS)
 def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
-    if alphabet is not None and parser_class is MultiChoicesParser:
+    if alphabet is not None and parser_class is MultiChoicesParserTrie:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb)
@@ -252,7 +252,7 @@ def test_next(parser_class, grammar_alphabet, to_parse, nexts, end_symb) -> None
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_alphabet(parser_class, grammar_alphabet, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
-    if parser_class is MultiChoicesParser:
+    if parser_class is MultiChoicesParserTrie:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb)
     if alphabet is None:
@@ -263,7 +263,7 @@ def test_alphabet(parser_class, grammar_alphabet, end_symb) -> None:
 @pytest.mark.parametrize('parser_class', PARSER_CLASSES)
 def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
     grammar, alphabet = grammar_alphabet
-    if alphabet is not None and parser_class is MultiChoicesParser:
+    if alphabet is not None and parser_class is MultiChoicesParserTrie:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb)
@@ -285,7 +285,7 @@ def test_parse_incorrect(parser_class, grammar_alphabet, end_symb) -> None:
 def test_parse_correct(parser_class, grammar_alphabet, end_symb):
 
     grammar, alphabet = grammar_alphabet
-    if alphabet is not None and parser_class is MultiChoicesParser:
+    if alphabet is not None and parser_class is MultiChoicesParserTrie:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb)
@@ -301,7 +301,7 @@ def test_parse_correct(parser_class, grammar_alphabet, end_symb):
 
 def test_copy(parser_class, grammar_alphabet, end_symb):
     grammar, alphabet = grammar_alphabet
-    if alphabet is not None and parser_class is MultiChoicesParser:
+    if alphabet is not None and parser_class is MultiChoicesParserTrie:
         pytest.skip("%s does not support this feature yet" % parser_class.__name__)
     grammar = adapt_grammar_to_parser(grammar, parser_class)
     parser = create_parser(parser_class, grammar, alphabet=alphabet, end_symb=end_symb)
@@ -313,7 +313,7 @@ def test_copy(parser_class, grammar_alphabet, end_symb):
     for test, c in zip(tests, copies):
         correct_test(test, c, reset=False, test_accept=False)
 
-def extract_all_correct_sequences(parser : MultiChoicesParser, buf : list) -> Iterable[str]:
+def extract_all_correct_sequences(parser : MultiChoicesParserTrie, buf : list) -> Iterable[str]:
     result = []
     n = parser.next()
     if len(n) == 0:

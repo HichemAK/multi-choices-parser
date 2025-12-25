@@ -34,7 +34,7 @@ DEFAULT_END_SYMB = End()
 class ParserError(Exception):
     pass
 
-class MultiChoicesParser:
+class MultiChoicesParserTrie:
     """
     A efficient incremental parser for multi-choice grammars. They are defined as grammars of the form:
 
@@ -157,7 +157,7 @@ class MultiChoicesParser:
         self.finished = False
         self._is_at_initial_state = True
 
-    def copy(self, stateful=True) -> MultiChoicesParser:
+    def copy(self, stateful=True) -> MultiChoicesParserTrie:
         """
         Return a copy of this parser (stateful or not).
 
@@ -169,7 +169,7 @@ class MultiChoicesParser:
         Returns:
             FastMultiChoicesParser: A new parser instance.
         """
-        new_parser = MultiChoicesParser([], end_symb=self.end_symb)
+        new_parser = MultiChoicesParserTrie([], end_symb=self.end_symb)
         new_parser.root = self.root  # Share the same roots
         new_parser.string_mode = self.string_mode
         if stateful:
@@ -209,7 +209,7 @@ class MultiChoicesParser:
         Returns:
             bool: True if the parsers are equivalent, False otherwise.
         """
-        if not isinstance(other, MultiChoicesParser):
+        if not isinstance(other, MultiChoicesParserTrie):
             return False
         return (
             self.root is other.root
@@ -266,5 +266,5 @@ class MultiChoicesParser:
         Returns:
             bool: If something was added.
         """
-        string = MultiChoicesParser.prepare_string(string, add_end=True, special_symb_allowed=False)
+        string = MultiChoicesParserTrie.prepare_string(string, add_end=True, special_symb_allowed=False)
         return _core.add_sequence(self.root, string, [], False)
