@@ -9,8 +9,8 @@
 
 from __future__ import annotations
 
-from . import _core
-from typing import List, Tuple, Union, Optional
+from . import _core # type: ignore
+from typing import List, Tuple, Union
 from .common import DEFAULT_END_SYMB, ParserError
 
 class MultiChoicesParserTrie:
@@ -234,16 +234,16 @@ class MultiChoicesParserTrie:
     #     return _core.delete_sequence(self.root, string)
 
         
-    def add_sequence(self, string: Union[Tuple[int], str]) -> bool:
-        """Add a sequence to the parsing tree. 
+    # def add_sequence(self, string: Union[Tuple[int], str]) -> bool:
+    #     """Add a sequence to the parsing tree. 
 
-        IMPORTANT: The end symbol should not be included.
+    #     IMPORTANT: The end symbol should not be included.
 
-        Args:
-            string (Union[Tuple[int], str]): String to add
+    #     Args:
+    #         string (Union[Tuple[int], str]): String to add
 
-        Returns:
-            bool: If something was added.
-        """
-        string = MultiChoicesParserTrie.prepare_string(string, add_end=True, special_symb_allowed=False)
-        return _core.add_sequence(self.root, string, [], False)
+    #     Returns:
+    #         bool: If something was added.
+    #     """
+    #     string = MultiChoicesParserTrie.prepare_string(string, add_end=True, special_symb_allowed=False)
+    #     return _core.add_sequence(self.root, string, [], False)

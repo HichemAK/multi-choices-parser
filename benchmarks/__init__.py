@@ -17,7 +17,7 @@ Usage:
 
 from .parser_interface import (
     ParserInterface,
-    MultiChoicesParserWrapper,
+    MultiChoicesParserTrieWrapper,
     TrieParser,
     AVAILABLE_PARSERS,
     get_parser_class,
@@ -46,7 +46,7 @@ from .plotting import (
 __all__ = [
     # Parser interface
     'ParserInterface',
-    'MultiChoicesParserWrapper',
+    'MultiChoicesParserTrieWrapper',
     'TrieParser',
     'AVAILABLE_PARSERS',
     'get_parser_class',

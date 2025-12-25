@@ -57,7 +57,7 @@ class ParserInterface(ABC):
         pass
 
 
-class MultiChoicesParserWrapper(ParserInterface):
+class MultiChoicesParserTrieWrapper(ParserInterface):
     """Wrapper for the multi-choices-parser implementation (sorted array mode)."""
 
     @classmethod
@@ -65,8 +65,34 @@ class MultiChoicesParserWrapper(ParserInterface):
         return "MultiChoicesParser"
 
     def __init__(self, strings: List[str]) -> None:
-        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
-        self._parser = MultiChoicesParser([strings])
+        from multi_choices_parser.trie import MultiChoicesParserTrie, DEFAULT_END_SYMB
+        self._parser = MultiChoicesParserTrie([strings])
+        self._end_symb = DEFAULT_END_SYMB
+
+    def step(self, char: str) -> None:
+        self._parser.step(char)
+
+    def reset(self) -> None:
+        self._parser.reset()
+
+    @property
+    def finished(self) -> bool:
+        return self._parser.finished
+
+    @property
+    def success(self) -> bool:
+        return self._parser.success
+    
+class MultiChoicesParserDAWGWrapper(ParserInterface):
+    """Wrapper for the multi-choices-parser implementation (sorted array mode)."""
+
+    @classmethod
+    def name(cls) -> str:
+        return "MultiChoicesParser"
+
+    def __init__(self, strings: List[str]) -> None:
+        from multi_choices_parser.dawg import MultiChoicesParserDAWG, DEFAULT_END_SYMB
+        self._parser = MultiChoicesParserDAWG([strings])
         self._end_symb = DEFAULT_END_SYMB
 
     def step(self, char: str) -> None:
@@ -170,9 +196,10 @@ class MultiChoicesParserWrapper(ParserInterface):
 
 # Registry of available parsers
 AVAILABLE_PARSERS = {
-    'trie (sortedarray)': MultiChoicesParserWrapper,
+    'trie (sortedarray)': MultiChoicesParserTrieWrapper,
     # 'multi_choices_hashmap': MultiChoicesHashMapWrapper,
     # 'python_trie': TrieParser,
+    'dawg': MultiChoicesParserDAWGWrapper
 }
 
 

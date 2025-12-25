@@ -5,50 +5,53 @@ Creates plots with confidence intervals for construction and validation benchmar
 """
 
 import os
-from typing import Dict, List, Optional, Tuple
+import hashlib
+from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.colors as mcolors
 
 
-# Color palette for different parsers
-PARSER_COLORS = {
-    'multi_choices': '#2ecc71',      # Green
-    'set_based': '#3498db',          # Blue
-    'python_trie': '#e74c3c',        # Red
-    'marisa_trie': '#9b59b6',        # Purple
-    'datrie': '#f39c12',             # Orange
-    'pygtrie': '#1abc9c',            # Teal
-}
+# Available line styles and markers for cycling
+LINESTYLES = ['-', '--', '-.', ':']
+MARKERS = ['o', 's', '^', 'D', 'v', 'p', 'h', '*', 'X', 'P']
 
-# Line styles for different parsers
-PARSER_LINESTYLES = {
-    'multi_choices': '-',
-    'set_based': '--',
-    'python_trie': '-.',
-    'marisa_trie': ':',
-    'datrie': '-',
-    'pygtrie': '--',
-}
+# Use a perceptually uniform colormap for better distinction
+# We'll generate colors deterministically from parser names
+BASE_COLORS = list(mcolors.TABLEAU_COLORS.values())
 
-# Markers for different parsers
-PARSER_MARKERS = {
-    'multi_choices': 'o',
-    'set_based': 's',
-    'python_trie': '^',
-    'marisa_trie': 'D',
-    'datrie': 'v',
-    'pygtrie': 'p',
-}
+
+def _hash_string(s: str) -> int:
+    """Generate a consistent hash from a string."""
+    return int(hashlib.md5(s.encode()).hexdigest(), 16)
+
+
+def _get_color_for_parser(parser_name: str) -> str:
+    """Generate a consistent color for a parser name."""
+    h = _hash_string(parser_name)
+    return BASE_COLORS[h % len(BASE_COLORS)]
+
+
+def _get_linestyle_for_parser(parser_name: str) -> str:
+    """Generate a consistent line style for a parser name."""
+    h = _hash_string(parser_name + "_linestyle")
+    return LINESTYLES[h % len(LINESTYLES)]
+
+
+def _get_marker_for_parser(parser_name: str) -> str:
+    """Generate a consistent marker for a parser name."""
+    h = _hash_string(parser_name + "_marker")
+    return MARKERS[h % len(MARKERS)]
 
 
 def get_parser_style(parser_name: str) -> Dict:
-    """Get plot style for a parser."""
+    """Get plot style for a parser. Colors are automatically generated but consistent across runs."""
     return {
-        'color': PARSER_COLORS.get(parser_name, '#7f8c8d'),
-        'linestyle': PARSER_LINESTYLES.get(parser_name, '-'),
-        'marker': PARSER_MARKERS.get(parser_name, 'o'),
+        'color': _get_color_for_parser(parser_name),
+        'linestyle': _get_linestyle_for_parser(parser_name),
+        'marker': _get_marker_for_parser(parser_name),
         'markersize': 6,
         'linewidth': 2,
     }

@@ -51,8 +51,6 @@ class MultiChoicesParserDAWG:
                 str_choices = [''.join(chr(c) for c in choice) for choice in choices]
                 self.dawgs.append(CompletionDAWG(str_choices))
 
-        # Store original choices for add_sequence support
-        self._original_choices = [list(choices) for choices in list_of_choices]
 
         # Initialize state
         self.current_list_idx = 0
@@ -175,7 +173,6 @@ class MultiChoicesParserDAWG:
         """
         new_parser = MultiChoicesParserDAWG([], end_symb=self.end_symb)
         new_parser.dawgs = self.dawgs  # Share the same DAWGs
-        new_parser._original_choices = self._original_choices
         new_parser.string_mode = self.string_mode
         new_parser.alphabet = self.alphabet
         if stateful:
@@ -232,31 +229,31 @@ class MultiChoicesParserDAWG:
     def is_at_initial_state(self) -> bool:
         return self._is_at_initial_state
 
-    def add_sequence(self, string: Union[Tuple[int], str]) -> bool:
-        """
-        Add a sequence to the parsing tree.
+    # def add_sequence(self, string: Union[Tuple[int], str]) -> bool:
+    #     """
+    #     Add a sequence to the parsing tree.
 
-        Note: DAWG does not support dynamic updates efficiently.
-        This rebuilds the DAWG which is expensive.
+    #     Note: DAWG does not support dynamic updates efficiently.
+    #     This rebuilds the DAWG which is expensive.
 
-        Args:
-            string (Union[Tuple[int], str]): String to add.
+    #     Args:
+    #         string (Union[Tuple[int], str]): String to add.
 
-        Returns:
-            bool: If something was added.
-        """
-        if self.string_mode:
-            if string in self._original_choices[0]:
-                return False
-            self._original_choices[0].append(string)
-            self.dawgs[0] = CompletionDAWG(self._original_choices[0])
-            return True
-        else:
-            str_string = ''.join(chr(c) for c in string)
-            choices_as_str = [''.join(chr(c) for c in choice) for choice in self._original_choices[0]]
-            if str_string in choices_as_str:
-                return False
-            self._original_choices[0].append(list(string))
-            choices_as_str.append(str_string)
-            self.dawgs[0] = CompletionDAWG(choices_as_str)
-            return True
+    #     Returns:
+    #         bool: If something was added.
+    #     """
+    #     if self.string_mode:
+    #         if string in self._original_choices[0]:
+    #             return False
+    #         self._original_choices[0].append(string)
+    #         self.dawgs[0] = CompletionDAWG(self._original_choices[0])
+    #         return True
+    #     else:
+    #         str_string = ''.join(chr(c) for c in string)
+    #         choices_as_str = [''.join(chr(c) for c in choice) for choice in self._original_choices[0]]
+    #         if str_string in choices_as_str:
+    #             return False
+    #         self._original_choices[0].append(list(string))
+    #         choices_as_str.append(str_string)
+    #         self.dawgs[0] = CompletionDAWG(choices_as_str)
+    #         return True
