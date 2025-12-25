@@ -28,7 +28,7 @@ import sys
 from datetime import datetime
 
 from benchmark_runner import BenchmarkRunner
-from plotting import plot_all_benchmarks, create_combined_figure
+from plotting import plot_all_benchmarks, create_combined_figure, create_combined_figure_linear
 from parser_interface import list_available_parsers
 from data_generator import get_benchmark_sizes
 
@@ -234,6 +234,20 @@ def main():
         df,
         parsers=args.parsers,
         output_path=os.path.join(args.output_dir, 'benchmark_combined.png')
+    )
+
+    # Combined figure with linear scales
+    combined_linear_path = os.path.join(args.output_dir, f'benchmark_combined_linear_{timestamp}.png')
+    create_combined_figure_linear(
+        df,
+        parsers=args.parsers,
+        output_path=combined_linear_path
+    )
+
+    create_combined_figure_linear(
+        df,
+        parsers=args.parsers,
+        output_path=os.path.join(args.output_dir, 'benchmark_combined_linear.png')
     )
 
     print("\nBenchmark complete!")

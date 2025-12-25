@@ -535,3 +535,115 @@ def create_combined_figure(
         print(f"Saved combined plot to {output_path}")
 
     return fig
+
+
+def create_combined_figure_linear(
+    df: pd.DataFrame,
+    parsers: List[str] = None,
+    output_path: str = None,
+    figsize: Tuple[int, int] = (12, 10)
+) -> plt.Figure:
+    """
+    Create a combined figure with all four plots in a 2x2 grid using linear scales.
+
+    Args:
+        df: DataFrame with benchmark results
+        parsers: List of parsers to include (default: all)
+        output_path: Path to save the figure (optional)
+        figsize: Figure size
+
+    Returns:
+        matplotlib Figure
+    """
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
+
+    if parsers is None:
+        parsers = df['parser'].unique()
+
+    # Plot 1: Construction Time (top-left)
+    ax = axes[0, 0]
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['construction_time_mean'].values,
+            parser_df['construction_time_ci_low'].values,
+            parser_df['construction_time_ci_high'].values,
+            label=parser,
+            style=style
+        )
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Construction Time (s)')
+    ax.set_title('Construction Time')
+    ax.legend(loc='upper left', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    # Plot 2: Construction Memory (top-right)
+    ax = axes[0, 1]
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['construction_memory_mean'].values / 1024 / 1024,  # Convert to MB
+            parser_df['construction_memory_ci_low'].values / 1024 / 1024,
+            parser_df['construction_memory_ci_high'].values / 1024 / 1024,
+            label=parser,
+            style=style
+        )
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Memory (MB)')
+    ax.set_title('Construction Memory')
+    ax.legend(loc='upper left', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    # Plot 3: Validation Time (bottom-left)
+    ax = axes[1, 0]
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['validation_time_mean'].values * 1e6,  # Convert to microseconds
+            parser_df['validation_time_ci_low'].values * 1e6,
+            parser_df['validation_time_ci_high'].values * 1e6,
+            label=parser,
+            style=style
+        )
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Validation Time (µs per query)')
+    ax.set_title('Validation Time')
+    ax.legend(loc='upper left', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    # Plot 4: Validation Memory (bottom-right)
+    ax = axes[1, 1]
+    for parser in parsers:
+        parser_df = df[df['parser'] == parser].sort_values('size')
+        style = get_parser_style(parser)
+        plot_with_confidence_interval(
+            ax,
+            parser_df['size'].values,
+            parser_df['validation_memory_mean'].values / 1024 / 1024,  # Convert to MB
+            parser_df['validation_memory_ci_low'].values / 1024 / 1024,
+            parser_df['validation_memory_ci_high'].values / 1024 / 1024,
+            label=parser,
+            style=style
+        )
+    ax.set_xlabel('Number of Strings')
+    ax.set_ylabel('Memory (MB)')
+    ax.set_title('Validation Memory')
+    ax.legend(loc='upper left', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if output_path:
+        fig.savefig(output_path, dpi=150, bbox_inches='tight')
+        print(f"Saved combined linear plot to {output_path}")
+
+    return fig
