@@ -84,95 +84,95 @@ class MultiChoicesParserWrapper(ParserInterface):
         return self._parser.success
 
 
-class MultiChoicesHashMapWrapper(ParserInterface):
-    """Wrapper for the multi-choices-parser implementation (hash map mode)."""
+# class MultiChoicesHashMapWrapper(ParserInterface):
+#     """Wrapper for the multi-choices-parser implementation (hash map mode)."""
 
-    @classmethod
-    def name(cls) -> str:
-        return "MultiChoicesHashMap"
+#     @classmethod
+#     def name(cls) -> str:
+#         return "MultiChoicesHashMap"
 
-    def __init__(self, strings: List[str]) -> None:
-        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
-        self._parser = MultiChoicesParser([strings])
-        self._end_symb = DEFAULT_END_SYMB
+#     def __init__(self, strings: List[str]) -> None:
+#         from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
+#         self._parser = MultiChoicesParser([strings])
+#         self._end_symb = DEFAULT_END_SYMB
 
-    def step(self, char: str) -> None:
-        self._parser.step(char)
+#     def step(self, char: str) -> None:
+#         self._parser.step(char)
 
-    def reset(self) -> None:
-        self._parser.reset()
+#     def reset(self) -> None:
+#         self._parser.reset()
 
-    @property
-    def finished(self) -> bool:
-        return self._parser.finished
+#     @property
+#     def finished(self) -> bool:
+#         return self._parser.finished
 
-    @property
-    def success(self) -> bool:
-        return self._parser.success
+#     @property
+#     def success(self) -> bool:
+#         return self._parser.success
 
 
-class TrieParser(ParserInterface):
-    """Pure Python trie implementation for comparison."""
+# class TrieParser(ParserInterface):
+#     """Pure Python trie implementation for comparison."""
 
-    @classmethod
-    def name(cls) -> str:
-        return "PythonTrie"
+#     @classmethod
+#     def name(cls) -> str:
+#         return "PythonTrie"
 
-    def __init__(self, strings: List[str]) -> None:
-        self._root = {}
-        self._end_marker = '\x00'
-        for s in strings:
-            self._insert(s)
-        self._current_node = self._root
-        self._finished = False
-        self._success = False
+#     def __init__(self, strings: List[str]) -> None:
+#         self._root = {}
+#         self._end_marker = '\x00'
+#         for s in strings:
+#             self._insert(s)
+#         self._current_node = self._root
+#         self._finished = False
+#         self._success = False
 
-    def _insert(self, string: str) -> None:
-        node = self._root
-        for char in string:
-            if char not in node:
-                node[char] = {}
-            node = node[char]
-        node[self._end_marker] = True
+#     def _insert(self, string: str) -> None:
+#         node = self._root
+#         for char in string:
+#             if char not in node:
+#                 node[char] = {}
+#             node = node[char]
+#         node[self._end_marker] = True
 
-    def step(self, char: str) -> None:
-        if self._finished:
-            return
+#     def step(self, char: str) -> None:
+#         if self._finished:
+#             return
 
-        if char not in self._current_node:
-            self._finished = True
-            self._success = False
-        else:
-            self._current_node = self._current_node[char]
-            # Check if we've reached end of a valid string
-            if self._end_marker in self._current_node and len(self._current_node) == 1:
-                # Only end marker present, no more characters possible
-                pass
+#         if char not in self._current_node:
+#             self._finished = True
+#             self._success = False
+#         else:
+#             self._current_node = self._current_node[char]
+#             # Check if we've reached end of a valid string
+#             if self._end_marker in self._current_node and len(self._current_node) == 1:
+#                 # Only end marker present, no more characters possible
+#                 pass
 
-    def reset(self) -> None:
-        self._current_node = self._root
-        self._finished = False
-        self._success = False
+#     def reset(self) -> None:
+#         self._current_node = self._root
+#         self._finished = False
+#         self._success = False
 
-    @property
-    def finished(self) -> bool:
-        return self._finished
+#     @property
+#     def finished(self) -> bool:
+#         return self._finished
 
-    @property
-    def success(self) -> bool:
-        return self._success
+#     @property
+#     def success(self) -> bool:
+#         return self._success
 
-    def complete(self) -> None:
-        """Mark validation as complete and check if current position is valid end."""
-        if not self._finished:
-            self._finished = True
-            self._success = self._end_marker in self._current_node
+#     def complete(self) -> None:
+#         """Mark validation as complete and check if current position is valid end."""
+#         if not self._finished:
+#             self._finished = True
+#             self._success = self._end_marker in self._current_node
 
 # Registry of available parsers
 AVAILABLE_PARSERS = {
-    'multi_choices': MultiChoicesParserWrapper,
+    'trie (sortedarray)': MultiChoicesParserWrapper,
     # 'multi_choices_hashmap': MultiChoicesHashMapWrapper,
-    'python_trie': TrieParser,
+    # 'python_trie': TrieParser,
 }
 
 
