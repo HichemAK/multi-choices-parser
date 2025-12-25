@@ -88,8 +88,8 @@ def validate_string(parser, string: str) -> bool:
 
 def main():
     parser = argparse.ArgumentParser(description='Benchmark worker process')
-    parser.add_argument('--parser', required=True)
-    parser.add_argument('--size', type=int, required=True)
+    parser.add_argument('--parser', required=False, default='multi_choices')
+    parser.add_argument('--size', type=int, required=False, default=1000)
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--min-length', type=int, default=1)
     parser.add_argument('--max-length', type=int, default=200)

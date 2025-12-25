@@ -65,8 +65,8 @@ class MultiChoicesParserWrapper(ParserInterface):
         return "MultiChoicesParser"
 
     def __init__(self, strings: List[str]) -> None:
-        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB, TransitionMode
-        self._parser = MultiChoicesParser([strings], transition_mode=TransitionMode.SORTED_ARRAY)
+        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
+        self._parser = MultiChoicesParser([strings])
         self._end_symb = DEFAULT_END_SYMB
 
     def step(self, char: str) -> None:
@@ -92,8 +92,8 @@ class MultiChoicesHashMapWrapper(ParserInterface):
         return "MultiChoicesHashMap"
 
     def __init__(self, strings: List[str]) -> None:
-        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB, TransitionMode
-        self._parser = MultiChoicesParser([strings], transition_mode=TransitionMode.HASH_MAP)
+        from multi_choices_parser import MultiChoicesParser, DEFAULT_END_SYMB
+        self._parser = MultiChoicesParser([strings])
         self._end_symb = DEFAULT_END_SYMB
 
     def step(self, char: str) -> None:
@@ -171,7 +171,7 @@ class TrieParser(ParserInterface):
 # Registry of available parsers
 AVAILABLE_PARSERS = {
     'multi_choices': MultiChoicesParserWrapper,
-    'multi_choices_hashmap': MultiChoicesHashMapWrapper,
+    # 'multi_choices_hashmap': MultiChoicesHashMapWrapper,
     'python_trie': TrieParser,
 }
 
