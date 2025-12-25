@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build test.cpp",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-g",
+                "-std=c++17",
+                "-I${workspaceFolder}/src",
+                "${workspaceFolder}/src/test.cpp",
+                "${workspaceFolder}/src/parser.cpp",
+                "-o",
+                "${workspaceFolder}/build/test"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compile test.cpp with debug symbols"
+        },
+        {
+            "label": "Create build directory",
+            "type": "shell",
+            "command": "mkdir",
+            "args": ["-p", "${workspaceFolder}/build"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
+        },
+        {
+            "label": "Build test.cpp (full)",
+            "dependsOn": ["Create build directory", "Build test.cpp"],
+            "dependsOrder": "sequence",
+            "group": "build"
+        }
+    ]
+}

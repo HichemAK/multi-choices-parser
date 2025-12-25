@@ -53,7 +53,7 @@ int main() {
 
     // Construct the parser tree
     std::cout << "Constructing the parser tree...\n";
-    auto tree = construct_tree(groups);
+    auto tree = construct_tree(groups, TransitionMode::HASH_MAP);
 
     // Print the tree structure for debugging
     std::cout << "\nParser tree structure:\n";
@@ -68,7 +68,7 @@ int main() {
     test_accepts(tree, test_sequences);
 
     // Test single-step traversal
-    std::vector<int> traversal_sequence = {1, 1, 2}; // Example valid sequence
+    std::vector<int> traversal_sequence = {97, 111, 114}; // Example valid sequence
     test_step(tree, traversal_sequence);
 
     return 0;
